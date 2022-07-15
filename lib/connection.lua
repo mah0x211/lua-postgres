@@ -223,6 +223,48 @@ function Connection:set_trace_flags(...)
     self.conn:set_trace_flags(...)
 end
 
+--- escape_string
+--- @param str string
+--- @return string? str
+--- @return error? err
+function Connection:escape_string_conn(str)
+    return self.conn:escape_string_conn(str)
+end
+
+--- escape_literal
+--- @param str string
+--- @return string? str
+--- @return error? err
+function Connection:escape_literal(str)
+    return self.conn:escape_literal(str)
+end
+
+--- escape_identifier
+--- @param str string
+--- @return string? str
+--- @return error? err
+function Connection:escape_identifier(str)
+    return self.conn:escape_identifier(str)
+end
+
+--- escape_bytea_conn
+--- @param str string
+--- @return string? str
+--- @return error? err
+function Connection:escape_bytea_conn(str)
+    return self.conn:escape_bytea_conn(str)
+end
+
+--- encrypt_password_conn
+--- @param passwd string
+--- @param user string
+--- @param algorithm string
+--- @return string? str
+--- @return error? err
+function Connection:encrypt_password_conn(passwd, user, algorithm)
+    return self.conn:encrypt_password_conn(passwd, user, algorithm)
+end
+
 --- flush
 --- @param deadline integer
 --- @return boolean ok
