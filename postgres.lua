@@ -68,10 +68,24 @@ end
 require('metamodule').new(Postgres)
 
 local _M = {}
+-- export constants
 for k, v in pairs(libpq) do
     if string.find(k, '^[A-Z_]+$') then
         _M[k] = v
     end
 end
+
+-- export functions
+_M.is_threadsafe = libpq.is_threadsafe
+_M.unescape_bytea = libpq.unescape_bytea
+_M.lib_version = libpq.lib_version
+_M.mblen = libpq.mblen
+_M.mblen_bounded = libpq.mblen_bounded
+_M.dsplen = libpq.dsplen
+_M.env2encoding = libpq.env2encoding
+_M.encrypt_password = libpq.encrypt_password
+_M.char_to_encoding = libpq.char_to_encoding
+_M.encoding_to_char = libpq.encoding_to_char
+_M.valid_server_encoding_id = libpq.valid_server_encoding_id
 
 return _M

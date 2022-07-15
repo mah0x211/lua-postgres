@@ -1,0 +1,9 @@
+coverage/
+_*
+*.o
+*.out
+*.so
+*.gcda
+*.gcno
+*.profraw
+tmp/
