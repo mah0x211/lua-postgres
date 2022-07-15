@@ -24,9 +24,10 @@ dependencies = {
 build = {
     type = "builtin",
     modules = {
-        ['postgres.connection'] = "lib/connection.lua",
-        ['postgres.result'] = "lib/result.lua",
-        ['postgres.rows'] = "lib/rows.lua",
-        ['postgres.rows.single'] = "lib/rows/single.lua",
+        ["postgres"] = "postgres.lua",
+        ["postgres.connection"] = "lib/connection.lua",
+        ["postgres.result"] = "lib/result.lua",
+        ["postgres.rows"] = "lib/rows.lua",
+        ["postgres.rows.single"] = "lib/rows/single.lua",
     },
 }
