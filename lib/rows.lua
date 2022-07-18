@@ -155,6 +155,31 @@ function Rows:get(decoder)
     end
 end
 
+--- getall
+--- @param decoder? function
+--- @param deadline? integer
+--- @return table[]? rows
+--- @return error? err
+--- @return boolean? timeout
+function Rows:getall(decoder, deadline)
+    local list = {}
+    repeat
+        local row, err = self:get(decoder)
+        if not row then
+            return nil, err
+        end
+        list[#list + 1] = row
+
+        local ok, timeout
+        ok, err, timeout = self:next(deadline)
+        if err or timeout then
+            return nil, err, timeout
+        end
+    until ok == false
+
+    return list
+end
+
 return {
     new = require('metamodule').new(Rows),
 }
