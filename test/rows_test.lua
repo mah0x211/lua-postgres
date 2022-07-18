@@ -118,11 +118,7 @@ function testcase.get()
 
         -- test that get second result rows
         rows = assert(rows:next_rows())
-        data = {}
-        repeat
-            local row = assert(rows:get())
-            data[#data + 1] = row
-        until rows:next() == false
+        data = assert(rows:getall())
         assert.equal(data, {
             {
                 '10',
