@@ -43,7 +43,7 @@ end
 --- rows
 --- @param deadline? integer
 --- @return function iter
-function SingleReader:each(deadline)
+function SingleReader:read(deadline)
     if deadline ~= nil and not is_uint(deadline) then
         error('deadline must be uint', 2)
     elseif self.done then
