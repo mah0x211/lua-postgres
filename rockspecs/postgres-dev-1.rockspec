@@ -27,7 +27,7 @@ build = {
         ["postgres"] = "postgres.lua",
         ["postgres.connection"] = "lib/connection.lua",
         ["postgres.result"] = "lib/result.lua",
-        ["postgres.rows"] = "lib/rows.lua",
-        ["postgres.rows.single"] = "lib/rows/single.lua",
+        ["postgres.reader"] = "lib/reader.lua",
+        ["postgres.reader.single"] = "lib/reader/single.lua",
     },
 }

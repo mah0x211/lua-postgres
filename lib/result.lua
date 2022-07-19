@@ -20,10 +20,10 @@
 -- THE SOFTWARE.
 --
 --- assign to local
+local new_reader = require('postgres.reader').new
+local new_single_reader = require('postgres.reader.single').new
 local libpq = require('libpq')
 local get_result_stat = libpq.util.get_result_stat
-local new_rows = require('postgres.rows').new
-local new_single_rows = require('postgres.rows.single').new
 --- constants
 local PGRES_TUPLES_OK = libpq.PGRES_TUPLES_OK
 local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
@@ -31,8 +31,7 @@ local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
 --- @class postgres.result
 --- @field conn postgres.connection
 --- @field res libpq.result
---- @field status integer
---- @field status_text string
+--- @field res_stat? table
 local Result = {}
 
 --- init
@@ -40,7 +39,69 @@ local Result = {}
 function Result:init(conn, res)
     self.conn = conn
     self.res = res
-    self.status, self.status_text = res:status()
+    return self
+end
+
+--- next
+--- @param deadline? integer
+--- @return postgres.result res?
+--- @return error err?
+--- @return boolean? timeout
+function Result:next(deadline)
+    return self.conn:get_result(deadline)
+end
+
+--- clear
+function Result:clear()
+    self.res:clear()
+end
+
+--- close
+--- @return boolean ok
+--- @return error? err
+--- @return boolean? timeout
+function Result:close()
+    local res = self
+    local err, timeout
+    while res do
+        res:clear()
+        res, err, timeout = self:next()
+    end
+
+    if err or timeout then
+        return false, err, timeout
+    end
+
+    return true
+end
+
+--- status
+--- @return status integer
+--- @return status_text string
+function Result:status()
+    return self.res:status()
+end
+
+--- stat
+--- @return table
+function Result:stat()
+    if not self.res_stat then
+        self.res_stat = get_result_stat(self.res)
+    end
+    return self.res_stat
+end
+
+--- value
+--- @param row integer
+--- @param col integer
+--- @return string val
+function Result:value(row, col)
+    return self.res:get_value(row, col)
+end
+
+--- reader
+--- @return postgres.reader reader?
+function Result:reader()
     -- PGRES_TUPLES_OK:         a query command that returns tuples was executed
     --                          properly by the backend, PGresult contains the
     --                          result tuples.
@@ -58,53 +119,12 @@ function Result:init(conn, res)
     -- PGRES_PIPELINE_SYNC:     pipeline synchronization point.
     -- PGRES_PIPELINE_ABORTED:  Command didn't run because of an abort earlier
     --                          in a pipeline.
-    return self
-end
-
---- close
-function Result:close()
-    self.res:clear()
-end
-
---- stat
---- @return table
-function Result:stat()
-    return get_result_stat(self.res)
-end
-
---- is_null
---- @param row integer
---- @param col integer
---- @return boolean ok
-function Result:is_null(row, col)
-    return self.res:get_is_null(row, col)
-end
-
---- value
---- @param row integer
---- @param col integer
---- @return string val
-function Result:value(row, col)
-    return self.res:get_value(row, col)
-end
-
---- rows
---- @return postgres.rows? rows
-function Result:rows()
-    if self.status == PGRES_TUPLES_OK then
-        return new_rows(self)
-    elseif self.status == PGRES_SINGLE_TUPLE then
-        return new_single_rows(self)
+    local status = self:status()
+    if status == PGRES_TUPLES_OK then
+        return new_reader(self)
+    elseif status == PGRES_SINGLE_TUPLE then
+        return new_single_reader(self)
     end
-end
-
---- next
---- @param deadline integer
---- @return postgres.result res
---- @return error err
---- @return boolean timeout
-function Result:next(deadline)
-    return self.conn:get_result(deadline)
 end
 
 return {
