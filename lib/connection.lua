@@ -388,41 +388,33 @@ local function new(conninfo, deadline)
         return nil, conn:error_message()
     end
 
-    -- sync connect
-    if not is_nonblock then
-        return Connection(conn)
-    end
-
     -- async connect
     local c = Connection(conn)
-    -- check status
-    status = conn:connect_poll()
-    if status == PGRES_POLLING_OK then
-        return c
-    elseif status == PGRES_POLLING_FAILED then
-        return nil, conn:error_message()
-    end
+    while true do
+        -- check status
+        status = conn:connect_poll()
+        if status == PGRES_POLLING_OK then
+            return c
+        elseif status == PGRES_POLLING_FAILED then
+            return nil, conn:error_message()
+        end
 
-    -- polling a status
-    local ok, timeout
-    if status == PGRES_POLLING_READING then
-        ok, err, timeout = c:wait_readable(deadline)
-    elseif status == PGRES_POLLING_WRITING then
-        ok, err, timeout = c:wait_writable(deadline)
-    else
-        return nil, format('got unsupported status: %d', status)
-    end
-    -- got error or timeout
-    if not ok then
-        conn:finish()
-        return nil, err, timeout
-    end
+        -- polling a status
+        local ok, timeout
+        if status == PGRES_POLLING_READING then
+            ok, err, timeout = c:wait_readable(deadline)
+        elseif status == PGRES_POLLING_WRITING then
+            ok, err, timeout = c:wait_writable(deadline)
+        else
+            return nil, format('got unsupported status: %d', status)
+        end
 
-    -- check status
-    if conn:connect_poll() ~= PGRES_POLLING_OK then
-        return nil, conn:error_message()
+        -- got error or timeout
+        if not ok then
+            conn:finish()
+            return nil, err, timeout
+        end
     end
-    return c
 end
 
 return {
