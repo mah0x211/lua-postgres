@@ -32,6 +32,7 @@ local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
 --- @field conn postgres.connection
 --- @field res libpq.result
 --- @field res_stat? table
+--- @field is_cleared? boolean
 local Result = {}
 
 --- init
@@ -54,6 +55,7 @@ end
 --- clear
 function Result:clear()
     self.res:clear()
+    self.is_cleared = true
 end
 
 --- close
@@ -79,7 +81,8 @@ end
 --- @return status integer
 --- @return status_text string
 function Result:status()
-    return self.res:status()
+    local stat = self:stat()
+    return stat.status, stat.status_text
 end
 
 --- stat
@@ -102,6 +105,10 @@ end
 --- reader
 --- @return postgres.reader reader?
 function Result:reader()
+    if self.is_cleared then
+        return nil
+    end
+
     -- PGRES_TUPLES_OK:         a query command that returns tuples was executed
     --                          properly by the backend, PGresult contains the
     --                          result tuples.
@@ -119,10 +126,12 @@ function Result:reader()
     -- PGRES_PIPELINE_SYNC:     pipeline synchronization point.
     -- PGRES_PIPELINE_ABORTED:  Command didn't run because of an abort earlier
     --                          in a pipeline.
-    local status = self:status()
-    if status == PGRES_TUPLES_OK then
+    local stat = self:stat()
+    if not stat.ntuples or stat.ntuples == 0 then
+        return nil
+    elseif stat.status == PGRES_TUPLES_OK then
         return new_reader(self)
-    elseif status == PGRES_SINGLE_TUPLE then
+    elseif stat.status == PGRES_SINGLE_TUPLE then
         return new_single_reader(self)
     end
 end
