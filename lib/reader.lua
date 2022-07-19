@@ -63,9 +63,8 @@ function Reader:each()
             return nil
         end
 
-        local field = fields[coli]
         local v = res:value(rowi, coli)
-        return rowi, coli, v, field
+        return rowi, fields[coli], v
     end
 end
 

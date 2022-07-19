@@ -16,7 +16,7 @@ function testcase.each()
     -- test that read result
     local reader = assert(res:reader())
     local rows = {}
-    for row, col, val, field in reader:each() do
+    for row, field, val in reader:each() do
         local cols = rows[row]
         if not cols then
             cols = {}
@@ -24,7 +24,7 @@ function testcase.each()
         end
 
         cols[field.name] = {
-            col = col,
+            col = field.col,
             val = val,
         }
     end
@@ -53,7 +53,7 @@ function testcase.each()
 
     -- test that cannot read after consumed
     rows = {}
-    for row, col, val, field in reader:each() do
+    for row, field, val in reader:each() do
         local cols = rows[row]
         if not cols then
             cols = {}
@@ -61,7 +61,7 @@ function testcase.each()
         end
 
         cols[field.name] = {
-            col = col,
+            col = field.col,
             val = val,
         }
     end
@@ -73,7 +73,7 @@ function testcase.each()
     res = assert(res:next())
     reader = assert(res:reader())
     rows = {}
-    for row, col, val, field in reader:each() do
+    for row, field, val in reader:each() do
         local cols = rows[row]
         if not cols then
             cols = {}
@@ -81,7 +81,7 @@ function testcase.each()
         end
 
         cols[field.name] = {
-            col = col,
+            col = field.col,
             val = val,
         }
     end
