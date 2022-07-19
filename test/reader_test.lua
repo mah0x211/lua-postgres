@@ -107,5 +107,12 @@ function testcase.read()
             },
         },
     })
+
+    -- test that return no reader
+    res = assert(reader:result())
+    assert.is_nil(res:reader())
+
+    -- test that return nil
+    assert.is_nil(res:next())
 end
 
