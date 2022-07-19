@@ -88,9 +88,8 @@ function SingleReader:each(deadline)
             end
         end
 
-        local field = fields[coli]
         local v = res:value(1, coli)
-        return rowi, coli, v, field
+        return rowi, fields[coli], v
     end
 end
 
