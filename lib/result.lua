@@ -102,6 +102,16 @@ function Result:value(row, col)
     return self.res:get_value(row, col)
 end
 
+--- rowinfo
+--- @return integer status
+--- @return integer nrow
+function Result:rowinfo()
+    local stat = self:stat()
+    if stat.status == PGRES_TUPLES_OK or stat.status == PGRES_SINGLE_TUPLE then
+        return stat.status, stat.ntuples
+    end
+end
+
 --- reader
 --- @return postgres.reader reader?
 function Result:reader()
@@ -126,12 +136,12 @@ function Result:reader()
     -- PGRES_PIPELINE_SYNC:     pipeline synchronization point.
     -- PGRES_PIPELINE_ABORTED:  Command didn't run because of an abort earlier
     --                          in a pipeline.
-    local stat = self:stat()
-    if not stat.ntuples or stat.ntuples == 0 then
+    local status, nrow = self:rowinfo()
+    if not nrow or nrow == 0 then
         return nil
-    elseif stat.status == PGRES_TUPLES_OK then
+    elseif status == PGRES_TUPLES_OK then
         return new_reader(self)
-    elseif stat.status == PGRES_SINGLE_TUPLE then
+    elseif status == PGRES_SINGLE_TUPLE then
         return new_single_reader(self)
     end
 end
