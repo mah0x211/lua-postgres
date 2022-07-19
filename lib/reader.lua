@@ -39,7 +39,7 @@ end
 
 --- rows
 --- @return function iter
-function Reader:each()
+function Reader:read()
     local reader = self
     local res = reader.res
     local stat = res:stat()

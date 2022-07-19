@@ -2,7 +2,7 @@ require('luacov')
 local testcase = require('testcase')
 local new_connection = require('postgres.connection').new
 
-function testcase.each()
+function testcase.read()
     local c = assert(new_connection())
     local res = assert(c:query([[
         SELECT * FROM (
@@ -16,7 +16,7 @@ function testcase.each()
     -- test that read result
     local reader = assert(res:reader())
     local rows = {}
-    for row, field, val in reader:each() do
+    for row, field, val in reader:read() do
         local cols = rows[row]
         if not cols then
             cols = {}
@@ -53,7 +53,7 @@ function testcase.each()
 
     -- test that cannot read after consumed
     rows = {}
-    for row, field, val in reader:each() do
+    for row, field, val in reader:read() do
         local cols = rows[row]
         if not cols then
             cols = {}
@@ -73,7 +73,7 @@ function testcase.each()
     res = assert(res:next())
     reader = assert(res:reader())
     rows = {}
-    for row, field, val in reader:each() do
+    for row, field, val in reader:read() do
         local cols = rows[row]
         if not cols then
             cols = {}
