@@ -6,6 +6,18 @@ function testcase.new()
     -- test that create new connection
     local c = assert(new_connection())
     assert.match(c, '^postgres.connection: ', false)
+
+    -- test that create new connection with deadline
+    c = assert(new_connection(nil, 1000))
+    assert.match(c, '^postgres.connection: ', false)
+end
+
+function testcase.close()
+    local c = assert(new_connection())
+
+    -- test that close method can be called any times
+    c:close()
+    c:close()
 end
 
 function testcase.query()
