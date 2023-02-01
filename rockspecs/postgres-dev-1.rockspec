@@ -16,7 +16,7 @@ dependencies = {
     "io-wait >= 0.1.0",
     "isa >= 0.3.0",
     "lauxhlib >= 0.5.0",
-    "libpq",
+    "libpq >= 0.1.0",
     "metamodule >= 0.3.3",
     "unpack >= 0.1.0",
     "yyjson >= 0.4.0",
