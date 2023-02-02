@@ -106,7 +106,7 @@ function Pool:clear(callback, n)
                 end
                 conn = nil
             elseif err then
-                return nconn, res
+                return nconn, err
             end
             conn = next(pool, conn)
         end

@@ -79,7 +79,35 @@ function testcase.clear()
         n = n + 1
         return n < 3
     end), 2)
+    c1 = assert(pool:get())
+    assert.is_nil(pool:get())
+
+    -- test that return error from callback
+    pool:set(c1)
+    local err
+    n, err = pool:clear(function()
+        return false, 'callback error'
+    end)
+    assert.match(err, 'callback error')
+    c1 = assert(pool:get())
+    assert.is_nil(pool:get())
+
+    -- test that return error if callback throws an error
+    pool:set(c1)
+    n, err = pool:clear(function()
+        -- luacheck: ignore undefined_variable
+        n = n + undefined_variable
+    end)
+    assert.match(err, 'undefined_variable')
     assert(pool:get())
     assert.is_nil(pool:get())
+
+    -- test that throws an error if callback argument is invalid
+    err = assert.throws(pool.clear, pool, 'invalid callback')
+    assert.match(err, 'callback must be callable')
+
+    -- test that throws an error if n argument is invalid
+    err = assert.throws(pool.clear, pool, nil, 'invalid n')
+    assert.match(err, 'n must be uint')
 end
 
