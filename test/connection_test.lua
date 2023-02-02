@@ -60,17 +60,31 @@ end
 function testcase.query()
     local c = assert(new_connection())
 
-    -- test that send query and get result
+    -- test that send query with parameters and get result
     local res, err, timeout = c:query([[
-        CREATE TEMP TABLE test_tbl (
-            id serial,
-            str varchar,
-            num integer
-        )
-    ]])
+        SELECT ${foo}, ${bar}, ${baz}, $1, ${foo}
+    ]], {
+        foo = 'foo',
+        bar = 'bar',
+        baz = 'baz',
+        'hello',
+    })
     assert.match(res, '^postgres.result: ', false)
     assert.is_nil(err)
     assert.is_nil(timeout)
+
+    local reader = assert(res:reader())
+    local cols = {}
+    for _, field, val in reader:read() do
+        cols[field.col] = val
+    end
+    assert.equal(cols, {
+        'foo',
+        'bar',
+        'baz',
+        'hello',
+        'foo',
+    })
 end
 
 function testcase.get_result()

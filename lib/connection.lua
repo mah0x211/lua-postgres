@@ -403,16 +403,25 @@ end
 function Connection:query(query, params, deadline, single_row_mode)
     if not is_string(query) then
         error('query must be string', 2)
-    elseif params ~= nil and not is_table(params) then
+    elseif params == nil then
+        params = {}
+    elseif not is_table(params) then
         error('params must be table', 2)
-    elseif deadline ~= nil and not is_uint(deadline) then
+    end
+    if deadline ~= nil and not is_uint(deadline) then
         error('deadline must be uint', 2)
     elseif single_row_mode ~= nil and not is_boolean(single_row_mode) then
         error('single_row_mode must be boolean', 2)
     end
 
-    local ok, err
-    if not params or #params == 0 then
+    local err
+    query, err = self:replace_named_params(query, params)
+    if not query then
+        return nil, err
+    end
+
+    local ok
+    if #params == 0 then
         ok, err = self.conn:send_query(query)
     else
         ok, err = self.conn:send_query_params(query, unpack(params))
