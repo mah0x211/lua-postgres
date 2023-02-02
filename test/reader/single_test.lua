@@ -114,5 +114,9 @@ function testcase.read()
 
     -- test that return nil
     assert.is_nil(res:next())
+
+    -- test that throws an error if deadline argument is invalid
+    local err = assert.throws(reader.read, reader, 'invalid')
+    assert.match(err, 'deadline must be uint')
 end
 
