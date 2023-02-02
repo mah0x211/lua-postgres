@@ -21,6 +21,10 @@
 --
 --- assign to local
 local format = string.format
+local gsub = string.gsub
+local concat = table.concat
+local pcall = pcall
+local type = type
 local unpack = require('unpack')
 local isa = require('isa')
 local is_boolean = isa.boolean
@@ -283,6 +287,109 @@ function Connection:flush(deadline)
             return false, err, timeout
         end
     end
+end
+
+--- stringify
+--- @param v any
+--- @return any v
+--- @return any err
+local function stringify(v)
+    local t = type(v)
+    if t == 'string' then
+        return v, t
+    elseif t == 'nil' then
+        return 'NULL', t
+    elseif t == 'boolean' then
+        return v and 'TRUE' or 'FALSE', t
+    elseif t == 'number' then
+        return tostring(v)
+    elseif t == 'table' then
+        return v, t
+    end
+    return nil, t
+end
+
+--- replace_named_params
+--- @param query string
+--- @param params table
+--- @return string? query
+--- @return any err
+function Connection:replace_named_params(query, params)
+    if not is_string(query) then
+        error('query must be string', 2)
+    elseif not is_table(params) then
+        error('params must be table', 2)
+    end
+
+    local param_ids = {}
+    local ok, res = pcall(gsub, query, '%${([^}]+)}', function(name)
+        if param_ids[name] then
+            return param_ids[name]
+        end
+
+        -- convert to positional parameters
+        local v, t = stringify(params[name])
+        params[name] = nil
+
+        if not v then
+            error(format('invalid parameter %q: data type %q is not supported',
+                         name, t))
+        elseif t ~= 'table' then
+            -- add positional parameter
+            params[#params + 1] = v
+            param_ids[name] = '$' .. #params
+            return param_ids[name]
+        end
+
+        -- convert table to array
+        local stack = {}
+        local ctx = {
+            ids = {},
+            tbl = v,
+        }
+        ctx.idx, v = next(ctx.tbl)
+        while v do
+            v, t = stringify(v)
+            if not v then
+                error(format(
+                          'invalid parameter %q: data type %q is not supported',
+                          name, t))
+            elseif t ~= 'table' then
+                -- convert to positional parameters
+                params[#params + 1] = v
+                ctx.ids[#ctx.ids + 1] = '$' .. #params
+            else
+                stack[#stack + 1] = ctx
+                ctx = {
+                    ids = {},
+                    tbl = v,
+                }
+            end
+
+            ctx.idx, v = next(ctx.tbl, ctx.idx)
+            if not v then
+                while #stack > 0 do
+                    local child = ctx
+                    ctx, stack[#stack] = stack[#stack], nil
+                    ctx.ids[#ctx.ids + 1] =
+                        '{' .. concat(child.ids, ', ') .. '}'
+                    ctx.idx, v = next(ctx.tbl, ctx.idx)
+                    if v then
+                        break
+                    end
+                end
+            end
+        end
+
+        param_ids[name] = concat(ctx.ids, ', ')
+        return param_ids[name]
+    end)
+
+    if not ok then
+        return nil, res
+    end
+
+    return res
 end
 
 --- query
