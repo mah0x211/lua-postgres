@@ -329,7 +329,6 @@ function Connection:replace_named_params(query, params)
 
         -- convert to positional parameters
         local v, t = stringify(params[name])
-        params[name] = nil
 
         if not v then
             error(format('invalid parameter %q: data type %q is not supported',

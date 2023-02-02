@@ -45,6 +45,17 @@ function testcase.replace_named_params()
                  'SELECT $2, $3, $4, {$5, $6}, $7, $8, $2, $3, $4, {$5, $6}, $7, $9')
     assert.equal(params, {
         'hello',
+        foo = 'foo',
+        bar = {
+            1,
+            'bar',
+            {
+                11,
+                12,
+            },
+            2,
+        },
+        baz = 'baz',
         'foo',
         '1',
         'bar',
