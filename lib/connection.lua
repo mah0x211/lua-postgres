@@ -21,6 +21,10 @@
 --
 --- assign to local
 local format = string.format
+local gsub = string.gsub
+local concat = table.concat
+local pcall = pcall
+local type = type
 local unpack = require('unpack')
 local isa = require('isa')
 local is_boolean = isa.boolean
@@ -285,6 +289,109 @@ function Connection:flush(deadline)
     end
 end
 
+--- stringify
+--- @param v any
+--- @return any v
+--- @return any err
+local function stringify(v)
+    local t = type(v)
+    if t == 'string' then
+        return v, t
+    elseif t == 'nil' then
+        return 'NULL', t
+    elseif t == 'boolean' then
+        return v and 'TRUE' or 'FALSE', t
+    elseif t == 'number' then
+        return tostring(v)
+    elseif t == 'table' then
+        return v, t
+    end
+    return nil, t
+end
+
+--- replace_named_params
+--- @param query string
+--- @param params table
+--- @return string? query
+--- @return any err
+function Connection:replace_named_params(query, params)
+    if not is_string(query) then
+        error('query must be string', 2)
+    elseif not is_table(params) then
+        error('params must be table', 2)
+    end
+
+    local param_ids = {}
+    local ok, res = pcall(gsub, query, '%${([^}]+)}', function(name)
+        if param_ids[name] then
+            return param_ids[name]
+        end
+
+        -- convert to positional parameters
+        local v, t = stringify(params[name])
+        params[name] = nil
+
+        if not v then
+            error(format('invalid parameter %q: data type %q is not supported',
+                         name, t))
+        elseif t ~= 'table' then
+            -- add positional parameter
+            params[#params + 1] = v
+            param_ids[name] = '$' .. #params
+            return param_ids[name]
+        end
+
+        -- convert table to array
+        local stack = {}
+        local ctx = {
+            ids = {},
+            tbl = v,
+        }
+        ctx.idx, v = next(ctx.tbl)
+        while v do
+            v, t = stringify(v)
+            if not v then
+                error(format(
+                          'invalid parameter %q: data type %q is not supported',
+                          name, t))
+            elseif t ~= 'table' then
+                -- convert to positional parameters
+                params[#params + 1] = v
+                ctx.ids[#ctx.ids + 1] = '$' .. #params
+            else
+                stack[#stack + 1] = ctx
+                ctx = {
+                    ids = {},
+                    tbl = v,
+                }
+            end
+
+            ctx.idx, v = next(ctx.tbl, ctx.idx)
+            if not v then
+                while #stack > 0 do
+                    local child = ctx
+                    ctx, stack[#stack] = stack[#stack], nil
+                    ctx.ids[#ctx.ids + 1] =
+                        '{' .. concat(child.ids, ', ') .. '}'
+                    ctx.idx, v = next(ctx.tbl, ctx.idx)
+                    if v then
+                        break
+                    end
+                end
+            end
+        end
+
+        param_ids[name] = concat(ctx.ids, ', ')
+        return param_ids[name]
+    end)
+
+    if not ok then
+        return nil, res
+    end
+
+    return res
+end
+
 --- query
 --- @param query string
 --- @param params any[]
@@ -296,16 +403,25 @@ end
 function Connection:query(query, params, deadline, single_row_mode)
     if not is_string(query) then
         error('query must be string', 2)
-    elseif params ~= nil and not is_table(params) then
+    elseif params == nil then
+        params = {}
+    elseif not is_table(params) then
         error('params must be table', 2)
-    elseif deadline ~= nil and not is_uint(deadline) then
+    end
+    if deadline ~= nil and not is_uint(deadline) then
         error('deadline must be uint', 2)
     elseif single_row_mode ~= nil and not is_boolean(single_row_mode) then
         error('single_row_mode must be boolean', 2)
     end
 
-    local ok, err
-    if not params or #params == 0 then
+    local err
+    query, err = self:replace_named_params(query, params)
+    if not query then
+        return nil, err
+    end
+
+    local ok
+    if #params == 0 then
         ok, err = self.conn:send_query(query)
     else
         ok, err = self.conn:send_query_params(query, unpack(params))

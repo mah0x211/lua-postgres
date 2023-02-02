@@ -20,20 +20,71 @@ function testcase.close()
     c:close()
 end
 
+function testcase.replace_named_params()
+    local c = assert(new_connection())
+
+    -- test that replace named parameters to positional parameters
+    local params = {
+        'hello',
+        foo = 'foo',
+        bar = {
+            1,
+            'bar',
+            {
+                11,
+                12,
+            },
+            2,
+        },
+        baz = 'baz',
+    }
+    local qry, err = c:replace_named_params(
+                         'SELECT ${foo}, ${bar}, ${baz}, ${foo}, ${bar}, ${unknown}',
+                         params)
+    assert.equal(qry,
+                 'SELECT $2, $3, $4, {$5, $6}, $7, $8, $2, $3, $4, {$5, $6}, $7, $9')
+    assert.equal(params, {
+        'hello',
+        'foo',
+        '1',
+        'bar',
+        '11',
+        '12',
+        '2',
+        'baz',
+        'NULL',
+    })
+    assert.is_nil(err)
+end
+
 function testcase.query()
     local c = assert(new_connection())
 
-    -- test that send query and get result
+    -- test that send query with parameters and get result
     local res, err, timeout = c:query([[
-        CREATE TEMP TABLE test_tbl (
-            id serial,
-            str varchar,
-            num integer
-        )
-    ]])
+        SELECT ${foo}, ${bar}, ${baz}, $1, ${foo}
+    ]], {
+        foo = 'foo',
+        bar = 'bar',
+        baz = 'baz',
+        'hello',
+    })
     assert.match(res, '^postgres.result: ', false)
     assert.is_nil(err)
     assert.is_nil(timeout)
+
+    local reader = assert(res:reader())
+    local cols = {}
+    for _, field, val in reader:read() do
+        cols[field.col] = val
+    end
+    assert.equal(cols, {
+        'foo',
+        'bar',
+        'baz',
+        'hello',
+        'foo',
+    })
 end
 
 function testcase.get_result()
