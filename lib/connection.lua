@@ -58,14 +58,14 @@ end
 
 --- get_cancel
 --- @return libpq.cancel cancel
---- @return error err
+--- @return any err
 function Connection:get_cancel()
     return self.conn:get_cancel()
 end
 
 --- request_cancel
 --- @return boolean ok
---- @return error err
+--- @return any err
 function Connection:request_cancel()
     return self.conn:request_cancel()
 end
@@ -140,7 +140,7 @@ end
 --- set_client_encoding
 --- @param encoding string
 --- @return boolean ok
---- @return error err
+--- @return any err
 function Connection:set_client_encoding(encoding)
     return self.conn:set_client_encoding(encoding)
 end
@@ -226,7 +226,7 @@ end
 --- escape_string
 --- @param str string
 --- @return string? str
---- @return error? err
+--- @return any err
 function Connection:escape_string_conn(str)
     return self.conn:escape_string_conn(str)
 end
@@ -234,7 +234,7 @@ end
 --- escape_literal
 --- @param str string
 --- @return string? str
---- @return error? err
+--- @return any err
 function Connection:escape_literal(str)
     return self.conn:escape_literal(str)
 end
@@ -242,7 +242,7 @@ end
 --- escape_identifier
 --- @param str string
 --- @return string? str
---- @return error? err
+--- @return any err
 function Connection:escape_identifier(str)
     return self.conn:escape_identifier(str)
 end
@@ -250,7 +250,7 @@ end
 --- escape_bytea_conn
 --- @param str string
 --- @return string? str
---- @return error? err
+--- @return any err
 function Connection:escape_bytea_conn(str)
     return self.conn:escape_bytea_conn(str)
 end
@@ -260,7 +260,7 @@ end
 --- @param user string
 --- @param algorithm string
 --- @return string? str
---- @return error? err
+--- @return any err
 function Connection:encrypt_password_conn(passwd, user, algorithm)
     return self.conn:encrypt_password_conn(passwd, user, algorithm)
 end
@@ -268,8 +268,8 @@ end
 --- flush
 --- @param deadline integer
 --- @return boolean ok
---- @return error err
---- @return boolean timeout
+--- @return any err
+--- @return boolean? timeout
 function Connection:flush(deadline)
     while true do
         local ok, err, again = self.conn:flush()
@@ -290,9 +290,9 @@ end
 --- @param params any[]
 --- @param deadline integer
 --- @param single_row_mode boolean
---- @return postgres.result res
---- @return error err
---- @return boolean timeout
+--- @return postgres.result? res
+--- @return any err
+--- @return boolean? timeout
 function Connection:query(query, params, deadline, single_row_mode)
     if not is_string(query) then
         error('query must be string', 2)
@@ -327,9 +327,9 @@ end
 
 --- get_result
 --- @param deadline integer
---- @return postgres.result res
---- @return error err
---- @return boolean timeout
+--- @return postgres.result? res
+--- @return any err
+--- @return boolean? timeout
 function Connection:get_result(deadline)
     if deadline ~= nil and not is_uint(deadline) then
         error('deadline must be uint', 2)
@@ -368,8 +368,9 @@ Connection = require('metamodule').new(Connection, 'postgres')
 --- connect
 --- @param conninfo string
 --- @param deadline integer
---- @return postgres.connection
---- @return error
+--- @return postgres.connection? conn
+--- @return any err
+--- @return boolean? timeout
 local function new(conninfo, deadline)
     if deadline ~= nil and not is_uint(deadline) then
         error('deadline must be uint', 2)

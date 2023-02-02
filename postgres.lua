@@ -46,8 +46,8 @@ end
 --- wait_readable
 --- @param deadline integer
 --- @return boolean ok
---- @return error err
---- @return boolean timeout
+--- @return any err
+--- @return boolean? timeout
 function Postgres:wait_readable(deadline)
     local wait_readable = pollable() and poll_readable or io_readable
     -- wait until readable
@@ -57,8 +57,8 @@ end
 --- wait_writable
 --- @param deadline integer
 --- @return boolean ok
---- @return error err
---- @return boolean timeout
+--- @return any err
+--- @return boolean? timeout
 function Postgres:wait_writable(deadline)
     local wait_writable = pollable() and poll_writable or io_writable
     -- wait until writable
