@@ -366,13 +366,16 @@ end
 Connection = require('metamodule').new(Connection, 'postgres')
 
 --- connect
---- @param conninfo string
+--- @param conninfo? string
 --- @param deadline integer
 --- @return postgres.connection? conn
 --- @return any err
 --- @return boolean? timeout
 local function new(conninfo, deadline)
-    if deadline ~= nil and not is_uint(deadline) then
+    conninfo = conninfo or ''
+    if not is_string(conninfo) then
+        error('conninfo must be string', 2)
+    elseif deadline ~= nil and not is_uint(deadline) then
         error('deadline must be uint', 2)
     end
 
@@ -390,7 +393,7 @@ local function new(conninfo, deadline)
     end
 
     -- async connect
-    local c = Connection(conn)
+    local c = Connection(conn, conninfo)
     while true do
         -- check status
         status = conn:connect_poll()

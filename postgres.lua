@@ -33,13 +33,16 @@ local DEFAULT_DEADLINE = 3000
 
 --- @class postgres
 --- @field conn libpq.conn
+--- @field conninfo string
 local Postgres = {}
 
 --- init
 --- @param conn libpq.conn
+--- @param conninfo string
 --- @return postgres
-function Postgres:init(conn)
+function Postgres:init(conn, conninfo)
     self.conn = conn
+    self.conninfo = conninfo
     return self
 end
 

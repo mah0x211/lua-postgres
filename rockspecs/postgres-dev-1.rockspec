@@ -26,6 +26,7 @@ build = {
     modules = {
         ["postgres"] = "postgres.lua",
         ["postgres.connection"] = "lib/connection.lua",
+        ["postgres.pool"] = "lib/pool.lua",
         ["postgres.result"] = "lib/result.lua",
         ["postgres.reader"] = "lib/reader.lua",
         ["postgres.reader.single"] = "lib/reader/single.lua",
