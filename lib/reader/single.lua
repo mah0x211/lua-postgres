@@ -28,13 +28,13 @@ local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
 
 --- @class postgres.reader.single : postgres.reader
 --- @field done? boolean
---- @field err? error
+--- @field err any
 --- @field timeout? boolean
 local SingleReader = {}
 
 --- result
 --- @return postgres.result res
---- @return error err
+--- @return any err
 --- @return boolean timeout
 function SingleReader:result()
     return self.res, self.err, self.timeout

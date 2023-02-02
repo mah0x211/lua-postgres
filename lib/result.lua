@@ -45,8 +45,8 @@ end
 
 --- next
 --- @param deadline? integer
---- @return postgres.result res?
---- @return error err?
+--- @return postgres.result? res
+--- @return any err
 --- @return boolean? timeout
 function Result:next(deadline)
     return self.conn:get_result(deadline)
@@ -60,7 +60,7 @@ end
 
 --- close
 --- @return boolean ok
---- @return error? err
+--- @return any err
 --- @return boolean? timeout
 function Result:close()
     local res = self
@@ -78,8 +78,8 @@ function Result:close()
 end
 
 --- status
---- @return status integer
---- @return status_text string
+--- @return integer status
+--- @return string status_text
 function Result:status()
     local stat = self:stat()
     return stat.status, stat.status_text
@@ -103,8 +103,8 @@ function Result:value(row, col)
 end
 
 --- rowinfo
---- @return integer status
---- @return integer nrow
+--- @return integer? status
+--- @return integer? nrow
 function Result:rowinfo()
     local stat = self:stat()
     if stat.status == PGRES_TUPLES_OK or stat.status == PGRES_SINGLE_TUPLE then
@@ -113,7 +113,7 @@ function Result:rowinfo()
 end
 
 --- reader
---- @return postgres.reader reader?
+--- @return postgres.reader? reader
 function Result:reader()
     if self.is_cleared then
         return nil
