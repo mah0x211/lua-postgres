@@ -31,13 +31,21 @@ function Reader:init(res)
     return self
 end
 
+--- close
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Reader:close()
+    return self.res:close()
+end
+
 --- result
 --- @return postgres.result res
 function Reader:result()
     return self.res
 end
 
---- rows
+--- read
 --- @return function iter
 function Reader:read()
     local reader = self

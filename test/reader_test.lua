@@ -2,6 +2,31 @@ require('luacov')
 local testcase = require('testcase')
 local new_connection = require('postgres.connection').new
 
+function testcase.close()
+    local c = assert(new_connection())
+    local res = assert(c:query([[
+        SELECT 1
+    ]]))
+    local reader = assert(res:reader())
+
+    -- test that close result
+    local ok, err, timeout = reader:close()
+    assert.is_true(ok)
+    assert.is_nil(err)
+    assert.is_nil(timeout)
+end
+
+function testcase.result()
+    local c = assert(new_connection())
+    local res = assert(c:query([[
+        SELECT 1
+    ]]))
+    local reader = assert(res:reader())
+
+    -- test that return result
+    assert.equal(reader:result(), res)
+end
+
 function testcase.read()
     local c = assert(new_connection())
     local res = assert(c:query([[
