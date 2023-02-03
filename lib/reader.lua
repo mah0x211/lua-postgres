@@ -53,34 +53,17 @@ function Reader:result()
     return self.res
 end
 
---- read
---- @return function iter
-function Reader:read()
-    local reader = self
-    local res = reader.res
-    local stat = res:stat()
-    local fields = stat.fields
-    local nrow = stat.ntuples
-    local ncol = stat.nfields
-    local rowi = self.rowi or 1
-    local coli = 0
-
-    return function()
-        coli = coli + 1
-        if coli > ncol then
-            -- set to next row index after read all columns
-            coli = 1
-            rowi = rowi + 1
-            reader.rowi = rowi
+--- read specified column value
+--- @param col integer|string column name, or column number started with 1
+--- @return string? val
+--- @return table? field
+function Reader:read(col)
+    local field = self.fields[col]
+    if field then
+        local v = self.res:value(self.rowi, field.col)
+        if v then
+            return v, field
         end
-
-        if rowi > nrow then
-            res:clear()
-            return nil
-        end
-
-        local v = res:value(rowi, coli)
-        return rowi, fields[coli], v
     end
 end
 

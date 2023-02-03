@@ -86,7 +86,8 @@ function testcase.query()
 
     local reader = assert(res:reader())
     local cols = {}
-    for _, field, val in reader:read() do
+    for i = 1, 5 do
+        local val, field = reader:read(i)
         cols[field.col] = val
     end
     assert.equal(cols, {

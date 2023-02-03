@@ -28,70 +28,7 @@ local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
 
 --- @class postgres.reader.single : postgres.reader
 --- @field done? boolean
---- @field err any
---- @field timeout? boolean
 local SingleReader = {}
-
---- result
---- @return postgres.result res
---- @return any err
---- @return boolean timeout
-function SingleReader:result()
-    return self.res, self.err, self.timeout
-end
-
---- read
---- @param deadline? integer
---- @return function iter
-function SingleReader:read(deadline)
-    if deadline ~= nil and not is_uint(deadline) then
-        error('deadline must be uint', 2)
-    elseif self.done then
-        -- do nothing
-        return function()
-        end
-    end
-
-    local reader = self
-    local res = reader.res
-    local stat = res:stat()
-    local fields = stat.fields
-    local ncol = stat.nfields
-    local rowi = 1
-    local coli = 0
-
-    return function()
-        coli = coli + 1
-        if coli > ncol then
-            -- set to next row index after read all columns
-            coli = 1
-            rowi = rowi + 1
-            reader.rowi = rowi
-
-            local err, timeout
-            res, err, timeout = res:next(deadline)
-            if not res then
-                reader.err = err
-                reader.timeout = timeout
-                return nil
-            end
-
-            -- clear current result and replace it with new result
-            reader.res:clear()
-            reader.res = res
-
-            local status = res:status()
-            if status ~= PGRES_SINGLE_TUPLE then
-                -- done
-                reader.done = true
-                return nil
-            end
-        end
-
-        local v = res:value(1, coli)
-        return rowi, fields[coli], v
-    end
-end
 
 --- next retrives the next row
 --- @param deadline? integer
@@ -108,13 +45,17 @@ function SingleReader:next(deadline)
     local res, err, timeout = self.res:next(deadline)
     if not res then
         return false, err, timeout
+    elseif res:status() ~= PGRES_SINGLE_TUPLE then
+        -- done
+        res:clear()
+        self.done = true
+        return false
     end
 
     -- clear current result and replace it with new result
     self.res:clear()
     self.res = res
-    self.done = res:status() ~= PGRES_SINGLE_TUPLE
-    return not self.done
+    return true
 end
 
 return {

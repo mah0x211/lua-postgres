@@ -158,6 +158,9 @@ function testcase.reader()
     assert.match(reader, '^postgres.reader: ', false)
     res:close()
 
+    -- test that return nil after closed
+    assert.is_nil(res:reader())
+
     -- test that get postgres.reader.single
     res = assert(c:query([[
         SELECT * FROM (
