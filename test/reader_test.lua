@@ -5,7 +5,7 @@ local new_connection = require('postgres.connection').new
 function testcase.close()
     local c = assert(new_connection())
     local res = assert(c:query([[
-        SELECT 1
+        SELECT 1 AS a, 2 AS b, TRUE AS c
     ]]))
     local reader = assert(res:reader())
 
@@ -27,7 +27,7 @@ function testcase.result()
     assert.equal(reader:result(), res)
 end
 
-function testcase.read()
+function testcase.read_next()
     local c = assert(new_connection())
     local res = assert(c:query([[
         SELECT * FROM (
@@ -37,107 +37,88 @@ function testcase.read()
             VALUES (10, 100), (20, 200)
         ) t1 (a, b);
     ]]))
-
-    -- test that read result
     local reader = assert(res:reader())
-    local rows = {}
-    for row, field, val in reader:read() do
-        local cols = rows[row]
-        if not cols then
-            cols = {}
-            rows[row] = cols
-        end
 
-        cols[field.name] = {
-            col = field.col,
-            val = val,
-        }
+    -- print(dump(reader))
+
+    -- test that read column value
+    for i, col in pairs({
+        {
+            name = 'a',
+            value = '1',
+        },
+        {
+            name = 'b',
+            value = '10',
+        },
+    }) do
+        -- test that read column value with column number
+        local v, field = reader:read(i)
+        assert.equal(v, col.value)
+        assert.equal(field.col, i)
+        assert.equal(field.name, col.name)
+
+        -- test that read column value with column name
+        v, field = reader:read(col.name)
+        assert.equal(v, col.value)
+        assert.equal(field.col, i)
+        assert.equal(field.name, col.name)
     end
-    assert.equal(rows, {
+
+    -- test that return true if next row exists
+    assert.is_true(reader:next())
+    for i, col in pairs({
         {
-            a = {
-                col = 1,
-                val = '1',
-            },
-            b = {
-                col = 2,
-                val = '10',
-            },
+            name = 'a',
+            value = '2',
         },
         {
-            a = {
-                col = 1,
-                val = '2',
-            },
-            b = {
-                col = 2,
-                val = '20',
-            },
+            name = 'b',
+            value = '20',
         },
-    })
+    }) do
+        -- test that read column value with column number
+        local v, field = reader:read(i)
+        assert.equal(v, col.value)
+        assert.equal(field.col, i)
+        assert.equal(field.name, col.name)
 
-    -- test that cannot read after consumed
-    rows = {}
-    for row, field, val in reader:read() do
-        local cols = rows[row]
-        if not cols then
-            cols = {}
-            rows[row] = cols
-        end
-
-        cols[field.name] = {
-            col = field.col,
-            val = val,
-        }
+        -- test that read column value with column name
+        v, field = reader:read(col.name)
+        assert.equal(v, col.value)
+        assert.equal(field.col, i)
+        assert.equal(field.name, col.name)
     end
-    assert.equal(rows, {})
 
-    -- test that result of reader
-    res = assert(reader:result())
-    res:clear()
-    res = assert(res:next())
-    reader = assert(res:reader())
-    rows = {}
-    for row, field, val in reader:read() do
-        local cols = rows[row]
-        if not cols then
-            cols = {}
-            rows[row] = cols
-        end
+    -- test that return false if no more row exists
+    assert.is_false(reader:next())
 
-        cols[field.name] = {
-            col = field.col,
-            val = val,
-        }
+    -- test that a next method can be called twice
+    assert.is_false(reader:next())
+
+    -- test that next query
+    reader = assert(reader:result():next():reader())
+    for i, col in pairs({
+        {
+            name = 'a',
+            value = '10',
+        },
+        {
+            name = 'b',
+            value = '100',
+        },
+    }) do
+        -- test that read column value with column number
+        local v, field = reader:read(i)
+        assert.equal(v, col.value)
+        assert.equal(field.col, i)
+        assert.equal(field.name, col.name)
+
+        -- test that read column value with column name
+        v, field = reader:read(col.name)
+        assert.equal(v, col.value)
+        assert.equal(field.col, i)
+        assert.equal(field.name, col.name)
     end
-    assert.equal(rows, {
-        {
-            a = {
-                col = 1,
-                val = '10',
-            },
-            b = {
-                col = 2,
-                val = '100',
-            },
-        },
-        {
-            a = {
-                col = 1,
-                val = '20',
-            },
-            b = {
-                col = 2,
-                val = '200',
-            },
-        },
-    })
-
-    -- test that return no reader
-    res = assert(reader:result())
-    assert.is_nil(res:reader())
-
-    -- test that return nil
-    assert.is_nil(res:next())
 end
 

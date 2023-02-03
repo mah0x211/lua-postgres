@@ -441,7 +441,7 @@ function Connection:query(query, params, deadline, single_row_mode)
 end
 
 --- get_result
---- @param deadline integer
+--- @param deadline? integer
 --- @return postgres.result? res
 --- @return any err
 --- @return boolean? timeout
