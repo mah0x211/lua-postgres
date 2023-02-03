@@ -32,6 +32,14 @@ local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
 --- @field timeout? boolean
 local SingleReader = {}
 
+--- close
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function SingleReader:close()
+    return self.res:close()
+end
+
 --- result
 --- @return postgres.result res
 --- @return any err
@@ -40,7 +48,7 @@ function SingleReader:result()
     return self.res, self.err, self.timeout
 end
 
---- rows
+--- read
 --- @param deadline? integer
 --- @return function iter
 function SingleReader:read(deadline)
