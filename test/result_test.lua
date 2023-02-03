@@ -128,6 +128,23 @@ function testcase.value()
     assert.equal(res:value(2, 2), '20')
 end
 
+function testcase.rowinfo()
+    local c = assert(new_connection())
+
+    -- test that get value
+    local res = assert(c:query([[
+        SELECT * FROM (
+            VALUES (1, 10), (NULL, 20)
+        ) t1 (a, b)
+    ]]))
+    assert.equal({
+        res:rowinfo(),
+    }, {
+        postgres.PGRES_TUPLES_OK,
+        2,
+    })
+end
+
 function testcase.reader()
     local c = assert(new_connection())
 
@@ -149,4 +166,14 @@ function testcase.reader()
     ]], nil, nil, true))
     reader = res:reader()
     assert.match(reader, '^postgres.reader.single: ', false)
+    res:close()
+
+    -- test that return error
+    res = assert(c:query([[
+            SELECT * FROM unknown_table
+        ]]))
+    local err
+    reader, err = res:reader()
+    assert.is_nil(reader)
+    assert.match(err, 'unknown_table')
 end
