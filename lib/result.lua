@@ -114,6 +114,7 @@ end
 
 --- reader
 --- @return postgres.reader? reader
+--- @return any err
 function Result:reader()
     if self.is_cleared then
         return nil
@@ -136,13 +137,13 @@ function Result:reader()
     -- PGRES_PIPELINE_SYNC:     pipeline synchronization point.
     -- PGRES_PIPELINE_ABORTED:  Command didn't run because of an abort earlier
     --                          in a pipeline.
-    local status, nrow = self:rowinfo()
-    if not nrow or nrow == 0 then
-        return nil
-    elseif status == PGRES_TUPLES_OK then
-        return new_reader(self)
-    elseif status == PGRES_SINGLE_TUPLE then
-        return new_single_reader(self)
+    local stat = self:stat()
+    if stat.error then
+        return nil, stat.error
+    elseif stat.status == PGRES_TUPLES_OK then
+        return stat.ntuples > 0 and new_reader(self) or nil
+    elseif stat.status == PGRES_SINGLE_TUPLE then
+        return stat.ntuples > 0 and new_single_reader(self) or nil
     end
 end
 
