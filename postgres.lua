@@ -47,7 +47,7 @@ function Postgres:init(conn, conninfo)
 end
 
 --- wait_readable
---- @param deadline integer
+--- @param deadline? integer
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
@@ -58,7 +58,7 @@ function Postgres:wait_readable(deadline)
 end
 
 --- wait_writable
---- @param deadline integer
+--- @param deadline? integer
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout

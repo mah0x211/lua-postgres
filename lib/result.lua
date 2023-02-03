@@ -141,9 +141,13 @@ function Result:reader()
     if stat.error then
         return nil, stat.error
     elseif stat.status == PGRES_TUPLES_OK then
-        return stat.ntuples > 0 and new_reader(self) or nil
+        if stat.ntuples > 0 then
+            return new_reader(self, stat.ntuples, stat.fields)
+        end
     elseif stat.status == PGRES_SINGLE_TUPLE then
-        return stat.ntuples > 0 and new_single_reader(self) or nil
+        if stat.ntuples > 0 then
+            return new_single_reader(self, stat.ntuples, stat.fields)
+        end
     end
 end
 

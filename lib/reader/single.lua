@@ -101,6 +101,30 @@ function SingleReader:read(deadline)
     end
 end
 
+--- next retrives the next row
+--- @param deadline? integer
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function SingleReader:next(deadline)
+    if deadline ~= nil and not is_uint(deadline) then
+        error('deadline must be uint', 2)
+    elseif self.done then
+        return false
+    end
+
+    local res, err, timeout = self.res:next(deadline)
+    if not res then
+        return false, err, timeout
+    end
+
+    -- clear current result and replace it with new result
+    self.res:clear()
+    self.res = res
+    self.done = res:status() ~= PGRES_SINGLE_TUPLE
+    return not self.done
+end
+
 return {
     new = require('metamodule').new(SingleReader, 'postgres.reader'),
 }

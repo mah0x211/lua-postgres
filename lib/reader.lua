@@ -21,13 +21,21 @@
 --
 --- @class postgres.reader
 --- @field res postgres.result
---- @field rowi? integer
+--- @field nrow integer
+--- @field fields table<string|integer, table<string, any>>
+--- @field rowi integer
 local Reader = {}
 
 --- init
+--- @param res postgres.result
+--- @param nrow integer
+--- @param fields table<string|integer, table<string, any>>
 --- @return postgres.reader
-function Reader:init(res)
+function Reader:init(res, nrow, fields)
     self.res = res
+    self.nrow = nrow
+    self.fields = fields
+    self.rowi = 1
     return self
 end
 
@@ -74,6 +82,19 @@ function Reader:read()
         local v = res:value(rowi, coli)
         return rowi, fields[coli], v
     end
+end
+
+--- next retrives the next row
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Reader:next()
+    if self.rowi < self.nrow then
+        -- set to next row index
+        self.rowi = self.rowi + 1
+        return true
+    end
+    return false
 end
 
 return {
