@@ -20,8 +20,8 @@
 -- THE SOFTWARE.
 --
 --- assign to local
-local new_reader = require('postgres.reader').new
-local new_single_reader = require('postgres.reader.single').new
+local new_rows = require('postgres.rows').new
+local new_single_rows = require('postgres.rows.single').new
 local libpq = require('libpq')
 local get_result_stat = libpq.util.get_result_stat
 --- constants
@@ -112,10 +112,10 @@ function Result:rowinfo()
     end
 end
 
---- reader
---- @return postgres.reader? reader
+--- rows
+--- @return postgres.rows? rows
 --- @return any err
-function Result:reader()
+function Result:rows()
     if self.is_cleared then
         return nil
     end
@@ -142,11 +142,11 @@ function Result:reader()
         return nil, stat.error
     elseif stat.status == PGRES_TUPLES_OK then
         if stat.ntuples > 0 then
-            return new_reader(self, stat.ntuples, stat.fields)
+            return new_rows(self, stat.ntuples, stat.fields)
         end
     elseif stat.status == PGRES_SINGLE_TUPLE then
         if stat.ntuples > 0 then
-            return new_single_reader(self, stat.ntuples, stat.fields)
+            return new_single_rows(self, stat.ntuples, stat.fields)
         end
     end
 end

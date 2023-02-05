@@ -26,16 +26,16 @@ local libpq = require('libpq')
 --- constants
 local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
 
---- @class postgres.reader.single : postgres.reader
+--- @class postgres.rows.single : postgres.rows
 --- @field done? boolean
-local SingleReader = {}
+local SingleRows = {}
 
 --- next retrives the next row
 --- @param deadline? integer
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function SingleReader:next(deadline)
+function SingleRows:next(deadline)
     if deadline ~= nil and not is_uint(deadline) then
         error('deadline must be uint', 2)
     elseif self.done then
@@ -59,6 +59,6 @@ function SingleReader:next(deadline)
 end
 
 return {
-    new = require('metamodule').new(SingleReader, 'postgres.reader'),
+    new = require('metamodule').new(SingleRows, 'postgres.rows'),
 }
 

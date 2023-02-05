@@ -145,30 +145,30 @@ function testcase.rowinfo()
     })
 end
 
-function testcase.reader()
+function testcase.rows()
     local c = assert(new_connection())
 
-    -- test that get postgres.reader
+    -- test that get postgres.rows
     local res = assert(c:query([[
         SELECT * FROM (
             VALUES (1, 10), (NULL, 20)
         ) t1 (a, b)
     ]]))
-    local reader = res:reader()
-    assert.match(reader, '^postgres.reader: ', false)
+    local rows = res:rows()
+    assert.match(rows, '^postgres.rows: ', false)
     res:close()
 
     -- test that return nil after closed
-    assert.is_nil(res:reader())
+    assert.is_nil(res:rows())
 
-    -- test that get postgres.reader.single
+    -- test that get postgres.rows.single
     res = assert(c:query([[
         SELECT * FROM (
             VALUES (1, 10), (NULL, 20)
         ) t1 (a, b)
     ]], nil, nil, true))
-    reader = res:reader()
-    assert.match(reader, '^postgres.reader.single: ', false)
+    rows = res:rows()
+    assert.match(rows, '^postgres.rows.single: ', false)
     res:close()
 
     -- test that return error
@@ -176,7 +176,7 @@ function testcase.reader()
             SELECT * FROM unknown_table
         ]]))
     local err
-    reader, err = res:reader()
-    assert.is_nil(reader)
+    rows, err = res:rows()
+    assert.is_nil(rows)
     assert.match(err, 'unknown_table')
 end

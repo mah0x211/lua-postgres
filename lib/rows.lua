@@ -19,19 +19,19 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 --
---- @class postgres.reader
+--- @class postgres.rows
 --- @field res postgres.result
 --- @field nrow integer
 --- @field fields table<string|integer, table<string, any>>
 --- @field rowi integer
-local Reader = {}
+local Rows = {}
 
 --- init
 --- @param res postgres.result
 --- @param nrow integer
 --- @param fields table<string|integer, table<string, any>>
---- @return postgres.reader
-function Reader:init(res, nrow, fields)
+--- @return postgres.rows
+function Rows:init(res, nrow, fields)
     self.res = res
     self.nrow = nrow
     self.fields = fields
@@ -43,13 +43,13 @@ end
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Reader:close()
+function Rows:close()
     return self.res:close()
 end
 
 --- result
 --- @return postgres.result res
-function Reader:result()
+function Rows:result()
     return self.res
 end
 
@@ -57,7 +57,7 @@ end
 --- @param col integer|string column name, or column number started with 1
 --- @return string? val
 --- @return table? field
-function Reader:read(col)
+function Rows:read(col)
     local field = self.fields[col]
     if field then
         local v = self.res:value(self.rowi, field.col)
@@ -71,7 +71,7 @@ end
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Reader:next()
+function Rows:next()
     if self.rowi < self.nrow then
         -- set to next row index
         self.rowi = self.rowi + 1
@@ -81,6 +81,6 @@ function Reader:next()
 end
 
 return {
-    new = require('metamodule').new(Reader),
+    new = require('metamodule').new(Rows),
 }
 
