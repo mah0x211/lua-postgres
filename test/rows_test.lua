@@ -7,10 +7,10 @@ function testcase.close()
     local res = assert(c:query([[
         SELECT 1 AS a, 2 AS b, TRUE AS c
     ]]))
-    local reader = assert(res:reader())
+    local rows = assert(res:rows())
 
     -- test that close result
-    local ok, err, timeout = reader:close()
+    local ok, err, timeout = rows:close()
     assert.is_true(ok)
     assert.is_nil(err)
     assert.is_nil(timeout)
@@ -21,10 +21,10 @@ function testcase.result()
     local res = assert(c:query([[
         SELECT 1
     ]]))
-    local reader = assert(res:reader())
+    local rows = assert(res:rows())
 
     -- test that return result
-    assert.equal(reader:result(), res)
+    assert.equal(rows:result(), res)
 end
 
 function testcase.read_next()
@@ -37,9 +37,7 @@ function testcase.read_next()
             VALUES (10, 100), (20, 200)
         ) t1 (a, b);
     ]]))
-    local reader = assert(res:reader())
-
-    -- print(dump(reader))
+    local rows = assert(res:rows())
 
     -- test that read column value
     for i, col in pairs({
@@ -53,20 +51,20 @@ function testcase.read_next()
         },
     }) do
         -- test that read column value with column number
-        local v, field = reader:read(i)
+        local v, field = rows:read(i)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
 
         -- test that read column value with column name
-        v, field = reader:read(col.name)
+        v, field = rows:read(col.name)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
     end
 
     -- test that return true if next row exists
-    assert.is_true(reader:next())
+    assert.is_true(rows:next())
     for i, col in pairs({
         {
             name = 'a',
@@ -78,26 +76,26 @@ function testcase.read_next()
         },
     }) do
         -- test that read column value with column number
-        local v, field = reader:read(i)
+        local v, field = rows:read(i)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
 
         -- test that read column value with column name
-        v, field = reader:read(col.name)
+        v, field = rows:read(col.name)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
     end
 
     -- test that return false if no more row exists
-    assert.is_false(reader:next())
+    assert.is_false(rows:next())
 
     -- test that a next method can be called twice
-    assert.is_false(reader:next())
+    assert.is_false(rows:next())
 
     -- test that next query
-    reader = assert(reader:result():next():reader())
+    rows = assert(rows:result():next():rows())
     for i, col in pairs({
         {
             name = 'a',
@@ -109,13 +107,13 @@ function testcase.read_next()
         },
     }) do
         -- test that read column value with column number
-        local v, field = reader:read(i)
+        local v, field = rows:read(i)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
 
         -- test that read column value with column name
-        v, field = reader:read(col.name)
+        v, field = rows:read(col.name)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)

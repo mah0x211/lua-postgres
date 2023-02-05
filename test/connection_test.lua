@@ -84,10 +84,10 @@ function testcase.query()
     assert.is_nil(err)
     assert.is_nil(timeout)
 
-    local reader = assert(res:reader())
+    local rows = assert(res:rows())
     local cols = {}
     for i = 1, 5 do
-        local val, field = reader:read(i)
+        local val, field = rows:read(i)
         cols[field.col] = val
     end
     assert.equal(cols, {
