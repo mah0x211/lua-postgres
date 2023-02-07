@@ -56,29 +56,23 @@ end
 
 --- read specified column value
 --- @param col integer|string column name, or column number started with 1
---- @return string? val
 --- @return table? field
+--- @return string? val
 function Rows:readat(col)
     local field = self.fields[col]
     if field then
-        local v = self.res:value(self.rowi, field.col)
-        if v then
-            return v, field
-        end
+        return field, self.res:value(self.rowi, field.col)
     end
 end
 
 --- read next column value
---- @return string? val
 --- @return table? field
+--- @return string? val
 function Rows:read()
     local field = self.fields[self.coli]
     if field then
-        local v = self.res:value(self.rowi, field.col)
-        if v then
-            self.coli = self.coli + 1
-            return v, field
-        end
+        self.coli = self.coli + 1
+        return field, self.res:value(self.rowi, field.col)
     end
 end
 
