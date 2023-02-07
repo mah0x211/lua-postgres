@@ -36,6 +36,7 @@ function Rows:init(res, nrow, fields)
     self.nrow = nrow
     self.fields = fields
     self.rowi = 1
+    self.coli = 1
     return self
 end
 
@@ -57,11 +58,25 @@ end
 --- @param col integer|string column name, or column number started with 1
 --- @return string? val
 --- @return table? field
-function Rows:read(col)
+function Rows:readat(col)
     local field = self.fields[col]
     if field then
         local v = self.res:value(self.rowi, field.col)
         if v then
+            return v, field
+        end
+    end
+end
+
+--- read next column value
+--- @return string? val
+--- @return table? field
+function Rows:read()
+    local field = self.fields[self.coli]
+    if field then
+        local v = self.res:value(self.rowi, field.col)
+        if v then
+            self.coli = self.coli + 1
             return v, field
         end
     end
@@ -75,6 +90,8 @@ function Rows:next()
     if self.rowi < self.nrow then
         -- set to next row index
         self.rowi = self.rowi + 1
+        -- reset column position
+        self.coli = 1
         return true
     end
     return false
