@@ -38,24 +38,13 @@ function testcase.replace_named_params()
         },
         baz = 'baz',
     }
-    local qry, err = c:replace_named_params(
-                         'SELECT ${foo}, ${bar}, ${baz}, ${foo}, ${bar}, ${unknown}',
-                         params)
+    local qry, newparams, err = c:replace_named_params(
+                                    'SELECT ${foo}, ${bar}, ${baz}, ${foo}, ${bar}, ${unknown}',
+                                    params)
     assert.equal(qry,
                  'SELECT $2, $3, $4, {$5, $6}, $7, $8, $2, $3, $4, {$5, $6}, $7, $9')
-    assert.equal(params, {
+    assert.equal(newparams, {
         'hello',
-        foo = 'foo',
-        bar = {
-            1,
-            'bar',
-            {
-                11,
-                12,
-            },
-            2,
-        },
-        baz = 'baz',
         'foo',
         '1',
         'bar',
