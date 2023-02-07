@@ -55,6 +55,7 @@ function SingleRows:next(deadline)
     -- clear current result and replace it with new result
     self.res:clear()
     self.res = res
+    self.coli = 1
     return true
 end
 
