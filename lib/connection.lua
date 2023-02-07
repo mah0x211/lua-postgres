@@ -313,6 +313,7 @@ end
 --- @param query string
 --- @param params table
 --- @return string? query
+--- @return table? params
 --- @return any err
 function Connection:replace_named_params(query, params)
     if not is_string(query) then
@@ -321,6 +322,9 @@ function Connection:replace_named_params(query, params)
         error('params must be table', 2)
     end
 
+    local newparams = {
+        unpack(params),
+    }
     local param_ids = {}
     local ok, res = pcall(gsub, query, '%${([^}]+)}', function(name)
         if param_ids[name] then
@@ -335,8 +339,8 @@ function Connection:replace_named_params(query, params)
                          name, t))
         elseif t ~= 'table' then
             -- add positional parameter
-            params[#params + 1] = v
-            param_ids[name] = '$' .. #params
+            newparams[#newparams + 1] = v
+            param_ids[name] = '$' .. #newparams
             return param_ids[name]
         end
 
@@ -355,8 +359,8 @@ function Connection:replace_named_params(query, params)
                           name, t))
             elseif t ~= 'table' then
                 -- convert to positional parameters
-                params[#params + 1] = v
-                ctx.ids[#ctx.ids + 1] = '$' .. #params
+                newparams[#newparams + 1] = v
+                ctx.ids[#ctx.ids + 1] = '$' .. #newparams
             else
                 stack[#stack + 1] = ctx
                 ctx = {
@@ -385,15 +389,15 @@ function Connection:replace_named_params(query, params)
     end)
 
     if not ok then
-        return nil, res
+        return nil, nil, res
     end
 
-    return res
+    return res, newparams
 end
 
 --- query
 --- @param query string
---- @param params any[]
+--- @param params? table?
 --- @param deadline integer
 --- @param single_row_mode boolean
 --- @return postgres.result? res
@@ -414,7 +418,7 @@ function Connection:query(query, params, deadline, single_row_mode)
     end
 
     local err
-    query, err = self:replace_named_params(query, params)
+    query, params, err = self:replace_named_params(query, params)
     if not query then
         return nil, err
     end
