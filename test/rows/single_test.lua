@@ -68,28 +68,29 @@ function testcase.read_next()
 
     -- test that return true if next row exists
     assert.is_true(rows:next())
-    for i, col in pairs({
+    list = {}
+    field, v = rows:read()
+    while field do
+        -- test that read column value
+        list[#list + 1] = {
+            col = #list + 1,
+            name = field.name,
+            value = v,
+        }
+        field, v = rows:read()
+    end
+    assert.equal(list, {
         {
+            col = 1,
             name = 'a',
             value = '2',
         },
         {
+            col = 2,
             name = 'b',
             value = '20',
         },
-    }) do
-        -- test that read column value with column number
-        field, v = rows:readat(i)
-        assert.equal(v, col.value)
-        assert.equal(field.col, i)
-        assert.equal(field.name, col.name)
-
-        -- test that read column value with column name
-        field, v = rows:readat(col.name)
-        assert.equal(v, col.value)
-        assert.equal(field.col, i)
-        assert.equal(field.name, col.name)
-    end
+    })
 
     -- test that return false if no more row exists
     assert.is_false(rows:next())
@@ -110,7 +111,7 @@ function testcase.read_next()
         },
     }) do
         -- test that read column value
-        field, v = rows:read()
+        field, v = rows:readat(i)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
