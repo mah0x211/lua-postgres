@@ -42,28 +42,30 @@ function testcase.read_next()
     -- print(dump(rows))
 
     -- test that read column value
-    for i, col in pairs({
+    local list = {}
+    repeat
+        -- test that read column value
+        local v, field = rows:read()
+        if v then
+            list[#list + 1] = {
+                col = #list + 1,
+                name = field.name,
+                value = v,
+            }
+        end
+    until v == nil
+    assert.equal(list, {
         {
+            col = 1,
             name = 'a',
             value = '1',
         },
         {
+            col = 2,
             name = 'b',
             value = '10',
         },
-    }) do
-        -- test that read column value with column number
-        local v, field = rows:read(i)
-        assert.equal(v, col.value)
-        assert.equal(field.col, i)
-        assert.equal(field.name, col.name)
-
-        -- test that read column value with column name
-        v, field = rows:read(col.name)
-        assert.equal(v, col.value)
-        assert.equal(field.col, i)
-        assert.equal(field.name, col.name)
-    end
+    })
 
     -- test that return true if next row exists
     assert.is_true(rows:next())
@@ -78,13 +80,13 @@ function testcase.read_next()
         },
     }) do
         -- test that read column value with column number
-        local v, field = rows:read(i)
+        local v, field = rows:readat(i)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
 
         -- test that read column value with column name
-        v, field = rows:read(col.name)
+        v, field = rows:readat(col.name)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
@@ -108,14 +110,8 @@ function testcase.read_next()
             value = '100',
         },
     }) do
-        -- test that read column value with column number
-        local v, field = rows:read(i)
-        assert.equal(v, col.value)
-        assert.equal(field.col, i)
-        assert.equal(field.name, col.name)
-
-        -- test that read column value with column name
-        v, field = rows:read(col.name)
+        -- test that read column value
+        local v, field = rows:read()
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
