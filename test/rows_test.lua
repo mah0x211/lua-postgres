@@ -41,16 +41,15 @@ function testcase.read_next()
 
     -- test that read column value
     local list = {}
-    repeat
-        local v, field = rows:read()
-        if v then
-            list[#list + 1] = {
-                name = field.name,
-                value = v,
-                col = #list + 1,
-            }
-        end
-    until v == nil
+    local field, v = rows:read()
+    while field do
+        list[#list + 1] = {
+            name = field.name,
+            value = v,
+            col = #list + 1,
+        }
+        field, v = rows:read()
+    end
     assert.equal(list, {
         {
             col = 1,
@@ -77,13 +76,13 @@ function testcase.read_next()
         },
     }) do
         -- test that read column value with column number
-        local v, field = rows:readat(i)
+        field, v = rows:readat(i)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
 
         -- test that read column value with column name
-        v, field = rows:readat(col.name)
+        field, v = rows:readat(col.name)
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)
@@ -108,7 +107,7 @@ function testcase.read_next()
         },
     }) do
         -- test that read column value
-        local v, field = rows:read()
+        field, v = rows:read()
         assert.equal(v, col.value)
         assert.equal(field.col, i)
         assert.equal(field.name, col.name)

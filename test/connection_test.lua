@@ -75,8 +75,8 @@ function testcase.query()
 
     local rows = assert(res:rows())
     local cols = {}
-    for i = 1, 5 do
-        local val, field = rows:read(i)
+    for _ = 1, 5 do
+        local field, val = rows:read()
         cols[field.col] = val
     end
     assert.equal(cols, {
