@@ -28,7 +28,7 @@ local isa = require('isa')
 local is_callable = isa.callable
 local is_uint = isa.uint
 
---- @class Pool
+--- @class postgres.pool
 --- @field pools table<string, table<postgres.connection, boolean>>
 local Pool = {}
 
@@ -68,7 +68,7 @@ function Pool:get(conninfo)
     end
 end
 
---- default_ppol_clear_callback
+--- default_pool_clear_callback
 --- @return boolean ok
 local function default_pool_clear_callback()
     return true
@@ -76,7 +76,7 @@ end
 
 --- clear
 --- @param callback fun(conninfo:string):(ok:boolean, err:any)
---- @oaram n integer
+--- @param n integer
 --- @return integer n
 --- @return any err
 function Pool:clear(callback, n)
