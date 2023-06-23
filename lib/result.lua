@@ -22,20 +22,18 @@
 --- assign to local
 local new_rows = require('postgres.rows').new
 local new_single_rows = require('postgres.rows.single').new
-local libpq = require('libpq')
-local get_result_stat = libpq.util.get_result_stat
---- constants
-local PGRES_TUPLES_OK = libpq.PGRES_TUPLES_OK
-local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
+local get_result_stat = require('postgres.util').get_result_stat
 
 --- @class postgres.result
 --- @field conn postgres.connection
---- @field res libpq.result
+--- @field res postgres.pgresult
 --- @field res_stat? table
 --- @field is_cleared? boolean
 local Result = {}
 
 --- init
+--- @param conn postgres.connection
+--- @param res postgres.pgresult
 --- @return postgres.result
 function Result:init(conn, res)
     self.conn = conn
@@ -78,11 +76,9 @@ function Result:close()
 end
 
 --- status
---- @return integer status
---- @return string status_text
+--- @return string status
 function Result:status()
-    local stat = self:stat()
-    return stat.status, stat.status_text
+    return self:stat().status
 end
 
 --- stat
@@ -107,7 +103,7 @@ end
 --- @return integer? nrow
 function Result:rowinfo()
     local stat = self:stat()
-    if stat.status == PGRES_TUPLES_OK or stat.status == PGRES_SINGLE_TUPLE then
+    if stat.status == 'tuples_ok' or stat.status == 'single_tuple' then
         return stat.status, stat.ntuples
     end
 end
@@ -140,11 +136,11 @@ function Result:rows()
     local stat = self:stat()
     if stat.error then
         return nil, stat.error
-    elseif stat.status == PGRES_TUPLES_OK then
+    elseif stat.status == 'tuples_ok' then
         if stat.ntuples > 0 then
             return new_rows(self, stat.ntuples, stat.fields)
         end
-    elseif stat.status == PGRES_SINGLE_TUPLE then
+    elseif stat.status == 'single_tuple' then
         if stat.ntuples > 0 then
             return new_single_rows(self, stat.ntuples, stat.fields)
         end

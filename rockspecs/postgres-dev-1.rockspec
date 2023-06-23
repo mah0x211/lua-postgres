@@ -15,7 +15,6 @@ dependencies = {
     "gpoll >= 0.2.0",
     "io-wait >= 0.1.0",
     "isa >= 0.3.0",
-    "libpq >= 0.1.0",
     "metamodule >= 0.4.0",
     "unpack >= 0.1.0",
 }
