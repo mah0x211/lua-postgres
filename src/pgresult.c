@@ -23,15 +23,6 @@
 // lua
 #include "lua_postgres.h"
 
-static PGresult *pgresult_check(lua_State *L)
-{
-    pgresult_t *r = luaL_checkudata(L, 1, PGRESULT_MT);
-    if (!r->result) {
-        luaL_error(L, "attempt to use a freed object");
-    }
-    return r->result;
-}
-
 static int param_type_lua(lua_State *L)
 {
     const PGresult *res = pgresult_check(L);
@@ -85,20 +76,10 @@ static int get_value_lua(lua_State *L)
     return 1;
 }
 
-static inline uintmax_t str2uint(char *str)
-{
-    errno = 0;
-    if (*str) {
-        return strtoumax(str, NULL, 10);
-    }
-    errno = ERANGE;
-    return UINTMAX_MAX;
-}
-
 static int cmd_tuples_lua(lua_State *L)
 {
     PGresult *res        = pgresult_check(L);
-    uintmax_t cmd_tuples = str2uint(PQcmdTuples(res));
+    uintmax_t cmd_tuples = lpg_str2uint(PQcmdTuples(res));
 
     if (cmd_tuples != UINTMAX_MAX) {
         lua_pushinteger(L, cmd_tuples);

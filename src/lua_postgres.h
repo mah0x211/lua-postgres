@@ -33,6 +33,16 @@
 #include <lauxhlib.h>
 #include <lua_errno.h>
 
+static inline uintmax_t lpg_str2uint(char *str)
+{
+    errno = 0;
+    if (*str) {
+        return strtoumax(str, NULL, 10);
+    }
+    errno = ERANGE;
+    return UINTMAX_MAX;
+}
+
 static inline void lpg_push_conninfo_options(lua_State *L,
                                              PQconninfoOption *options)
 {
@@ -228,6 +238,10 @@ static inline char *lpg_pg_exec_status_type_string(ExecStatusType status)
     }
 }
 
+#define PGCANCEL_MT "postgres.pgcancel"
+
+void init_postgres_pgcancel(lua_State *L);
+
 #define PGRESULT_MT "postgres.pgresult"
 
 typedef struct {
@@ -240,9 +254,14 @@ typedef struct {
 
 void init_postgres_pgresult(lua_State *L);
 
-#define PGCANCEL_MT "postgres.pgcancel"
-
-void init_postgres_pgcancel(lua_State *L);
+static inline PGresult *pgresult_check(lua_State *L)
+{
+    pgresult_t *r = luaL_checkudata(L, 1, PGRESULT_MT);
+    if (!r->result) {
+        luaL_error(L, "attempt to use a freed object");
+    }
+    return r->result;
+}
 
 #define PGCONN_MT "postgres.pgconn"
 
