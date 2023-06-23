@@ -424,6 +424,24 @@ function testcase.send_query()
     assert.match(err, 'string expected,')
 end
 
+function testcase.prepare_and_exec_prepare()
+    local c = assert(pgconn())
+
+    -- test that register prepared statement
+    local res = assert(c:prepare('example', "SELECT $1|| ' ' || $2 AS result"))
+    assert.equal(res:status(), 'command_ok')
+
+    -- test that cannot register prepared statement with the same name
+    res = assert(c:prepare('example', 'SELECT $1 || $2 || $3'))
+    assert.equal(res:status(), 'fatal_error')
+    assert.match(res:error_message(), 'already exists')
+
+    -- test that execute prepared statement
+    res = assert(c:exec_prepare('example', 'hello', 'world!'))
+    assert.equal(res:status(), 'tuples_ok')
+    assert.equal(res:get_value(1, 1), 'hello world!')
+end
+
 function testcase.send_query_params()
 
     -- test that send command with params

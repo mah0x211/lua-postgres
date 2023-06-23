@@ -615,6 +615,74 @@ static int send_query_lua(lua_State *L)
     return 2;
 }
 
+static int exec_prepare_lua(lua_State *L)
+{
+    int nparams         = lua_gettop(L) - 2;
+    PGconn *conn        = pgconn_check(L);
+    const char *name    = lauxh_checkstring(L, 2);
+    const char **params = NULL;
+    pgresult_t *res     = NULL;
+
+    if (nparams) {
+        params = lua_newuserdata(L, sizeof(char *) * nparams);
+        for (int i = 0, j = 3; i < nparams; i++, j++) {
+            params[i] = param2string(L, j);
+        }
+    }
+
+    res         = lua_newuserdata(L, sizeof(pgresult_t));
+    errno       = 0;
+    res->result = PQexecPrepared(conn, name, nparams, params, NULL, NULL, 0);
+    if (res->result) {
+        res->ref_conn     = lauxh_refat(L, 1);
+        res->is_allocated = LPGRESULT_IS_ALLOCATED;
+        lauxh_setmetatable(L, PGRESULT_MT);
+        return 1;
+    } else if (errno == 0) {
+        errno = ECANCELED;
+    }
+
+    // got error
+    lua_pushnil(L);
+    lua_errno_new_with_message(L, errno, "PQexecPrepared",
+                               PQerrorMessage(conn));
+    return 2;
+}
+
+static int prepare_lua(lua_State *L)
+{
+    int nparams       = lua_gettop(L) - 3;
+    PGconn *conn      = pgconn_check(L);
+    const char *name  = lauxh_checkstring(L, 2);
+    const char *query = lauxh_checkstring(L, 3);
+    Oid *param_types  = NULL;
+    pgresult_t *res   = NULL;
+
+    if (nparams) {
+        param_types = lua_newuserdata(L, sizeof(Oid) * nparams);
+        for (int i = 0, j = 3; i < nparams; i++, j++) {
+            param_types[i] = lauxh_checkuinteger(L, j);
+        }
+    }
+
+    res         = lua_newuserdata(L, sizeof(pgresult_t));
+    errno       = 0;
+    res->result = PQprepare(conn, name, query, nparams, param_types);
+    if (res->result) {
+        res->ref_conn     = lauxh_refat(L, 1);
+        res->is_allocated = LPGRESULT_IS_ALLOCATED;
+        lauxh_setmetatable(L, PGRESULT_MT);
+        return 1;
+    } else if (errno == 0) {
+        errno = ECANCELED;
+    }
+
+    // got error
+    lua_pushnil(L);
+    lua_errno_new_with_message(L, errno, "PQprepare", PQerrorMessage(conn));
+    return 2;
+}
+
 static int exec_params_lua(lua_State *L)
 {
     int nparams         = lua_gettop(L) - 2;
@@ -1337,6 +1405,8 @@ LUALIB_API int luaopen_postgres_pgconn(lua_State *L)
         {"set_trace_flags",              set_trace_flags_lua             },
         {"exec",                         exec_lua                        },
         {"exec_params",                  exec_params_lua                 },
+        {"prepare",                      prepare_lua                     },
+        {"exec_prepare",                 exec_prepare_lua                },
         {"send_query",                   send_query_lua                  },
         {"send_query_params",            send_query_params_lua           },
         {"set_single_row_mode",          set_single_row_mode_lua         },
