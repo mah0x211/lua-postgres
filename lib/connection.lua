@@ -34,22 +34,113 @@ local is_uint = isa.uint
 local poll = require('gpoll')
 local pollable = poll.pollable
 local poll_unwait = poll.unwait
+
+--- @type fun(conn: postgres.connection, res: postgres.pgresult):postgres.result
 local new_result = require('postgres.result').new
---- constants
-local libpq = require('libpq')
-local libpq_connect = libpq.connect
---- constants
-local CONNECTION_BAD = libpq.CONNECTION_BAD
--- Non-blocking mode only below here
--- PostgresPollingStatusType
-local PGRES_POLLING_OK = libpq.PGRES_POLLING_OK
-local PGRES_POLLING_FAILED = libpq.PGRES_POLLING_FAILED
--- these two indicate that one may use select before polling again
-local PGRES_POLLING_READING = libpq.PGRES_POLLING_READING
-local PGRES_POLLING_WRITING = libpq.PGRES_POLLING_WRITING
+
+--- define postgres.pgresult metatable
+--- @class postgres.pgresult
+--- @field clear fun(self: postgres.pgresult)
+--- @field connection fun(self: postgres.pgresult):postgres.pgconn
+--- @field status fun(self: postgres.pgresult):string
+--- @field error_message fun(self: postgres.pgresult):string?
+--- @field verbose_error_message fun(self: postgres.pgresult, verbosity?:string, visibility?:string):(errmsg:string?, err:any)
+--- @field error_field fun(self: postgres.pgresult, field:string):(value:string?, err:any)
+--- @field ntuples fun(self: postgres.pgresult):integer
+--- @field nfields fun(self: postgres.pgresult):integer
+--- @field binary_tuples fun(self: postgres.pgresult):boolean
+--- @field fname fun(self: postgres.pgresult, column:integer):string?
+--- @field fnumber fun(self: postgres.pgresult, column:string):integer?
+--- @field ftable fun(self: postgres.pgresult, column:integer):integer?
+--- @field ftablecol fun(self: postgres.pgresult, column:integer):integer?
+--- @field fformat fun(self: postgres.pgresult, column:integer):string
+--- @field ftype fun(self: postgres.pgresult, column:integer):integer
+--- @field fsize fun(self: postgres.pgresult, column:integer):integer
+--- @field fmod fun(self: postgres.pgresult, column:integer):integer
+--- @field cmd_status fun(self: postgres.pgresult):string
+--- @field oid_value fun(self: postgres.pgresult):integer
+--- @field cmd_tuples fun(self: postgres.pgresult):(ntuples:integer?, err:any)
+--- @field get_value fun(self: postgres.pgresult, row:integer, column:integer):string
+--- @field get_length fun(self: postgres.pgresult, row:integer, column:integer):integer
+--- @field get_is_null fun(self: postgres.pgresult, row:integer, column:integer):boolean
+--- @field nparams fun(self: postgres.pgresult):integer
+--- @field param_type fun(self: postgres.pgresult, param_num:integer):integer
+
+--- define postres.pgcancel metatable
+--- @class postgres.pgcancel
+--- @field free fun(self: postgres.pgcancel):boolean
+--- @field cancel fun(self: postgres.pgcancel):(ok:boolean, err:any)
+
+--- define postgres.pgconn metatable
+--- @class postgres.pgconn
+--- @field finish fun(self: postgres.pgconn)
+--- @field conninfo fun(self: postgres.pgconn):(info:table?, err:any)
+--- @field connect_poll fun(self: postgres.pgconn):string
+--- @field get_cancel fun(self: postgres.pgconn):(canceler:postgres.pgcancel?, err:any)
+--- @field db fun(self: postgres.pgconn):string
+--- @field user fun(self: postgres.pgconn):string
+--- @field pass fun(self: postgres.pgconn):string
+--- @field host fun(self: postgres.pgconn):string
+--- @field hostaddr fun(self: postgres.pgconn):string
+--- @field port fun(self: postgres.pgconn):string
+--- @field options fun(self: postgres.pgconn):string
+--- @field status fun(self: postgres.pgconn):string
+--- @field transaction_status fun(self: postgres.pgconn):string
+--- @field parameter_status fun(self: postgres.pgconn, name:string):string
+--- @field protocol_version fun(self: postgres.pgconn):integer
+--- @field server_version fun(self: postgres.pgconn):integer
+--- @field error_message fun(self: postgres.pgconn):string
+--- @field socket fun(self: postgres.pgconn):integer
+--- @field backend_pid fun(self: postgres.pgconn):integer
+--- @field pipeline_status fun(self: postgres.pgconn):string
+--- @field connection_needs_password fun(self: postgres.pgconn):boolean
+--- @field connection_used_password fun(self: postgres.pgconn):boolean
+--- @field client_encoding fun(self: postgres.pgconn):string
+--- @field set_client_encoding fun(self: postgres.pgconn, encoding:string):(ok:boolean, err:any)
+--- @field ssl_in_use fun(self: postgres.pgconn):boolean
+--- @field ssl_attribute fun(self: postgres.pgconn, name:string):string
+--- @field ssl_attribute_names fun(self: postgres.pgconn):table
+--- @field set_error_verbosity fun(self: postgres.pgconn, verbosity?:string):(old:string)
+--- @field set_error_context_visibility fun(self: postgres.pgconn, context?:string):(old:string)
+--- @field set_notice_processor fun(self: postgres.pgconn, fn:function, ...):(old:string)
+--- @field set_notice_receiver fun(self: postgres.pgconn, fn:function, ...):(old:string)
+--- @field call_notice_processor fun(self: postgres.pgconn, msg:string):boolean
+--- @field call_notice_receiver fun(self: postgres.pgconn, res:postgres.pgresult):boolean
+--- @field trace fun(self: postgres.pgconn, stream:file*):(old:file*)
+--- @field untrace fun(self: postgres.pgconn):(old:file*)
+--- @field set_trace_flags fun(self: postgres.pgconn, flg:string, ...)
+--- @field exec fun(self: postgres.pgconn, command:string):(result:postgres.pgresult?, err:any)
+--- @field exec_params fun(self: postgres.pgconn, command:string, ...):(result:postgres.pgresult?, err:any)
+--- @field send_query fun(self: postgres.pgconn, query:string):(ok:boolean, err:any)
+--- @field send_query_params fun(self: postgres.pgconn, query:string, ...):(ok:boolean, err:any)
+--- @field set_single_row_mode fun(self: postgres.pgconn):boolean
+--- @field get_result fun(self: postgres.pgconn):(result:postgres.pgresult?, err:any)
+--- @field is_busy fun(self: postgres.pgconn):(busy:boolean, err:any)
+--- @field consume_input fun(self: postgres.pgconn):(ok:boolean, err:any)
+--- @field enter_pipeline_mode fun(self: postgres.pgconn):(ok:boolean, err:any)
+--- @field exit_pipeline_mode fun(self: postgres.pgconn):(ok:boolean, err:any)
+--- @field pipeline_sync fun(self: postgres.pgconn):(ok:boolean, err:any)
+--- @field send_flush_request fun(self: postgres.pgconn):(ok:boolean, err:any)
+--- @field notifies fun(self: postgres.pgconn):(data:table?, err:any)
+--- @field put_copy_data fun(self: postgres.pgconn, data:string):(ok:boolean, err:any, again:boolean?)
+--- @field put_copy_end fun(self: postgres.pgconn, errmsg?:string):(ok:boolean, err:any, again:boolean?)
+--- @field get_copy_data fun(self: postgres.pgconn, async?:boolean):(data:string?, err:any, again:boolean?)
+--- @field set_nonblocking fun(self: postgres.pgconn, enable:boolean):(ok:boolean, err:any)
+--- @field is_nonblocking fun(self: postgres.pgconn):boolean
+--- @field flush fun(self: postgres.pgconn):(ok:boolean, err:any, again:boolean?)
+--- @field make_empty_result fun(self: postgres.pgconn, status?:string):(postgres.pgresult, err:any)
+--- @field escape_string_conn fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
+--- @field escape_literal fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
+--- @field escape_identifier fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
+--- @field escape_bytea_conn fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
+--- @field encrypt_password_conn fun(self: postgres.pgconn, user:string, password:string, algorithm?:string):(encrypted:string?, err:any)
+
+--- @type fun(conninfo: string, nonblock?: boolean): postgres.pgconn
+local pgconn = require('postgres.pgconn')
 
 --- @class postgres.connection : postgres
---- @field conn libpq.conn
+--- @field conn postgres.pgconn
+--- @field nonblock boolean
 local Connection = {}
 
 --- close
@@ -61,33 +152,26 @@ function Connection:close()
 end
 
 --- get_cancel
---- @return libpq.cancel cancel
+--- @return postgres.pgcancel? cancel
 --- @return any err
 function Connection:get_cancel()
     return self.conn:get_cancel()
 end
 
---- request_cancel
---- @return boolean ok
---- @return any err
-function Connection:request_cancel()
-    return self.conn:request_cancel()
-end
-
 --- status
---- @return integer status
+--- @return string status
 function Connection:status()
     return self.conn:status()
 end
 
 --- transaction_status
---- @return integer status
+--- @return string status
 function Connection:transaction_status()
     return self.conn:transaction_status()
 end
 
 --- parameter_status
---- @param param_name? string
+--- @param param_name string
 --- @return string status
 function Connection:parameter_status(param_name)
     return self.conn:parameter_status(param_name)
@@ -118,7 +202,7 @@ function Connection:backend_pid()
 end
 
 --- pipeline_status
---- @return integer status
+--- @return string status
 function Connection:pipeline_status()
     return self.conn:pipeline_status()
 end
@@ -151,7 +235,7 @@ end
 
 --- ssl_in_use
 --- @return boolean ok
-function Connection:ssl_in_use(encoding)
+function Connection:ssl_in_use()
     return self.conn:ssl_in_use()
 end
 
@@ -169,15 +253,15 @@ function Connection:ssl_attribute_names()
 end
 
 --- set_error_verbosity
---- @param verbosity integer
---- @return integer verbosity
+--- @param verbosity string
+--- @return string verbosity
 function Connection:set_error_verbosity(verbosity)
     return self.conn:set_error_verbosity(verbosity)
 end
 
 --- set_error_context_visibility
---- @param visibility integer
---- @return integer visibility
+--- @param visibility string
+--- @return string visibility
 function Connection:set_error_context_visibility(visibility)
     return self.conn:set_error_context_visibility(visibility)
 end
@@ -202,10 +286,10 @@ function Connection:call_notice_processor(msg)
 end
 
 --- call_notice_receiver
---- @param res libpq.result
+--- @param res postgres.result
 --- @return boolean ok
 function Connection:call_notice_receiver(res)
-    return self.conn:call_notice_receiver(res)
+    return self.conn:call_notice_receiver(res.res)
 end
 
 --- trace
@@ -222,7 +306,7 @@ function Connection:untrace()
 end
 
 --- set_trace_flags
---- @vararg integer
+--- @params ... string
 function Connection:set_trace_flags(...)
     self.conn:set_trace_flags(...)
 end
@@ -476,10 +560,15 @@ function Connection:get_result(deadline)
 end
 
 --- make_empty_result
---- @param status integer
---- @return postgres.result res
+--- @param status string
+--- @return postgres.result? res
+--- @return any err
 function Connection:make_empty_result(status)
-    return self.conn:make_empty_result(status)
+    local res, err = self.conn:make_empty_result(status)
+    if not res then
+        return nil, err
+    end
+    return new_result(self, res)
 end
 
 Connection = require('metamodule').new(Connection, 'postgres')
@@ -500,14 +589,14 @@ local function new(conninfo, deadline)
 
     local is_pollable = pollable()
     local is_nonblock = is_pollable or deadline ~= nil
-    local conn, err = libpq_connect(conninfo, is_nonblock)
+    local conn, err = pgconn(conninfo, is_nonblock)
     if err then
         return nil, err
     end
 
     -- check status
     local status = conn:status()
-    if status == CONNECTION_BAD then
+    if status == 'bad' then
         return nil, conn:error_message()
     end
 
@@ -516,17 +605,17 @@ local function new(conninfo, deadline)
     while true do
         -- check status
         status = conn:connect_poll()
-        if status == PGRES_POLLING_OK then
+        if status == 'ok' then
             return c
-        elseif status == PGRES_POLLING_FAILED then
+        elseif status == 'failed' then
             return nil, conn:error_message()
         end
 
         -- polling a status
         local ok, timeout
-        if status == PGRES_POLLING_READING then
+        if status == 'reading' then
             ok, err, timeout = c:wait_readable(deadline)
-        elseif status == PGRES_POLLING_WRITING then
+        elseif status == 'writing' then
             ok, err, timeout = c:wait_writable(deadline)
         else
             return nil, format('got unsupported status: %d', status)

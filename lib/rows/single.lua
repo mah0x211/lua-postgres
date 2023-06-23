@@ -22,9 +22,6 @@
 --- assign to local
 local isa = require('isa')
 local is_uint = isa.uint
-local libpq = require('libpq')
---- constants
-local PGRES_SINGLE_TUPLE = libpq.PGRES_SINGLE_TUPLE
 
 --- @class postgres.rows.single : postgres.rows
 --- @field done? boolean
@@ -45,7 +42,7 @@ function SingleRows:next(deadline)
     local res, err, timeout = self.res:next(deadline)
     if not res then
         return false, err, timeout
-    elseif res:status() ~= PGRES_SINGLE_TUPLE then
+    elseif res:status() ~= 'single_tuple' then
         -- done
         res:clear()
         self.done = true

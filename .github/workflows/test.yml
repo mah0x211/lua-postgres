@@ -11,7 +11,7 @@ jobs:
       uses: actions/checkout@v2
     -
       name: Setup Lua
-      uses: leafo/gh-actions-lua@v8.0.0
+      uses: leafo/gh-actions-lua@v10
     -
       name: Setup Luarocks
       uses: leafo/gh-actions-luarocks@v4
@@ -72,29 +72,34 @@ jobs:
     -
       name: Install Required Packages
       run: |
-        sudo apt-get install libpq-dev -y
-    -
-      name: Install
-      run: |
-        luarocks make LIBPQ_INCDIR=/usr/include/postgresql --server=https://luarocks.org/dev
+        sudo apt-get install libpq-dev lcov -y
     -
       name: Install Tools
       run: |
-        luarocks install testcase
         luarocks install luacov
+        luarocks install testcase
+        luarocks install setenv
+    -
+      name: Install
+      run: |
+        luarocks make POSTGRES_COVERAGE=1
     -
       name: Run Test
       env:
         PGHOST: 127.0.0.1
         PGPORT: 5432
         PGUSER: postgres
-        # PGPASSWORD: postgres
+        PGPASSWORD: postgres
         PGDATABASE: postgres
       run: |
         testcase --coverage ./test/
     -
+      name: Generate coverage reports
+      run: |
+        sh ./covgen.sh
+    -
       name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
       with:
         flags: unittests
 

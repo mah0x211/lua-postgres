@@ -11,21 +11,26 @@ description = {
 }
 dependencies = {
     "lua >= 5.1",
+    "errno >= 0.4.0",
     "gpoll >= 0.2.0",
     "io-wait >= 0.1.0",
     "isa >= 0.3.0",
-    "libpq >= 0.1.0",
     "metamodule >= 0.4.0",
     "unpack >= 0.1.0",
 }
 build = {
-    type = "builtin",
-    modules = {
-        ["postgres"] = "postgres.lua",
-        ["postgres.connection"] = "lib/connection.lua",
-        ["postgres.pool"] = "lib/pool.lua",
-        ["postgres.result"] = "lib/result.lua",
-        ["postgres.rows"] = "lib/rows.lua",
-        ["postgres.rows.single"] = "lib/rows/single.lua",
+    type = 'make',
+    build_variables = {
+        LIB_EXTENSION = "$(LIB_EXTENSION)",
+        CFLAGS = "$(CFLAGS)",
+        WARNINGS = "-Wall -Wno-trigraphs -Wmissing-field-initializers -Wreturn-type -Wmissing-braces -Wparentheses -Wno-switch -Wunused-function -Wunused-label -Wunused-parameter -Wunused-variable -Wunused-value -Wuninitialized -Wunknown-pragmas -Wshadow -Wsign-compare",
+        CPPFLAGS = "-I$(LUA_INCDIR)",
+        LDFLAGS = "$(LIBFLAG)",
+        POSTGRES_COVERAGE = "$(POSTGRES_COVERAGE)",
+    },
+    install_variables = {
+        LIB_EXTENSION = "$(LIB_EXTENSION)",
+        INST_LIBDIR = "$(LIBDIR)",
+        INST_LUADIR = "$(LUADIR)",
     },
 }

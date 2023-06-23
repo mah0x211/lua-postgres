@@ -1,6 +1,5 @@
 require('luacov')
 local testcase = require('testcase')
-local postgres = require('postgres')
 local new_connection = require('postgres.connection').new
 
 function testcase.status()
@@ -17,8 +16,7 @@ function testcase.status()
     assert.equal({
         res:status(),
     }, {
-        postgres.PGRES_COMMAND_OK,
-        'PGRES_COMMAND_OK',
+        'command_ok',
     })
 end
 
@@ -140,7 +138,7 @@ function testcase.rowinfo()
     assert.equal({
         res:rowinfo(),
     }, {
-        postgres.PGRES_TUPLES_OK,
+        'tuples_ok',
         2,
     })
 end
