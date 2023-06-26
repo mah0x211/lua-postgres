@@ -98,11 +98,11 @@ end
 ```
 
 
-## n, err = pool:clear( [callback], [n] )
+## n, errs = pool:clear( [callback], [n] )
 
 close all connections in the pool and clear the pool.
 
-if `callback` returns `false`, the connection is not closed and immediately returns a number of closed connections and an error message.
+if `callback` returns `false`, the connection is not closed and it returned error message is added to `errs`.
 
 **Parameters**
 
@@ -122,4 +122,4 @@ if `callback` returns `false`, the connection is not closed and immediately retu
 **Returns**
 
 - `n:number`: number of closed connections.
-- `err:string`: error message.
+- `errs:any[]|nil`: list of error messages.

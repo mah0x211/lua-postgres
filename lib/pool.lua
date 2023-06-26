@@ -90,29 +90,30 @@ function Pool:clear(callback, n)
     end
 
     local nconn = 0
+    local errs = {}
     for conninfo, pool in pairs(self.pools) do
         local conn = next(pool)
         while conn do
             local ok, res, err = pcall(callback, conninfo, conn)
             if not ok then
-                return nconn, res
+                errs[#errs + 1] = res
             elseif res == true then
                 -- close
                 pool[conn] = nil
                 conn:close()
                 nconn = nconn + 1
                 if n > 0 and nconn >= n then
-                    return nconn
+                    return nconn, #errs > 0 and errs or nil
                 end
                 conn = nil
             elseif err then
-                return nconn, err
+                errs[#errs + 1] = err
             end
             conn = next(pool, conn)
         end
     end
 
-    return nconn
+    return nconn, #errs > 0 and errs or nil
 end
 
 return {
