@@ -1,6 +1,5 @@
 std = "max"
 include_files = {
-    "postgres.lua",
     "lib/*.lua",
     "lib/*/*.lua",
     "test/*_test.lua",
