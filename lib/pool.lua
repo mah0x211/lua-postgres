@@ -101,7 +101,7 @@ function Pool:clear(callback, n)
                 pool[conn] = nil
                 conn:close()
                 nconn = nconn + 1
-                if n and n > 0 and nconn >= n then
+                if n > 0 and nconn >= n then
                     return nconn
                 end
                 conn = nil

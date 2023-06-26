@@ -38,5 +38,4 @@ $(INST_LUALIBDIR)/%: lib/%
 install: $(LUALIBS)
 	$(INSTALL) -d $(INST_LIBDIR)/postgres/
 	$(INSTALL) $(CLIBS) $(INST_LIBDIR)/postgres/
-	$(INSTALL) postgres.lua $(INST_LUADIR)/
 	rm -f $(OBJS) $(CLIBS) src/*.gcda
