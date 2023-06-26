@@ -31,9 +31,14 @@ local is_boolean = isa.boolean
 local is_string = isa.string
 local is_table = isa.table
 local is_uint = isa.uint
+local wait = require('io.wait')
+local io_readable = wait.readable
+local io_writable = wait.writable
 local poll = require('gpoll')
 local pollable = poll.pollable
 local poll_unwait = poll.unwait
+local poll_readable = poll.readable
+local poll_writable = poll.writable
 
 --- @type fun(conn: postgres.connection, res: postgres.pgresult):postgres.result
 local new_result = require('postgres.result').new
@@ -138,10 +143,44 @@ local new_result = require('postgres.result').new
 --- @type fun(conninfo: string, nonblock?: boolean): postgres.pgconn
 local pgconn = require('postgres.pgconn')
 
+local DEFAULT_DEADLINE = 3000
+
 --- @class postgres.connection : postgres
 --- @field conn postgres.pgconn
 --- @field nonblock boolean
 local Connection = {}
+
+--- init
+--- @param conn postgres.pgconn
+--- @param conninfo string
+--- @return postgres
+function Connection:init(conn, conninfo)
+    self.conn = conn
+    self.conninfo = conninfo
+    return self
+end
+
+--- wait_readable
+--- @param deadline? integer
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:wait_readable(deadline)
+    local wait_readable = pollable() and poll_readable or io_readable
+    -- wait until readable
+    return wait_readable(self.conn:socket(), deadline or DEFAULT_DEADLINE)
+end
+
+--- wait_writable
+--- @param deadline? integer
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:wait_writable(deadline)
+    local wait_writable = pollable() and poll_writable or io_writable
+    -- wait until writable
+    return wait_writable(self.conn:socket(), deadline or DEFAULT_DEADLINE)
+end
 
 --- close
 function Connection:close()
@@ -266,7 +305,7 @@ function Connection:set_error_context_visibility(visibility)
     return self.conn:set_error_context_visibility(visibility)
 end
 
---- set_notice
+--- set_notice_processor
 --- @param fn function
 function Connection:set_notice_processor(fn)
     self.conn:set_notice_processor(fn)
@@ -571,7 +610,7 @@ function Connection:make_empty_result(status)
     return new_result(self, res)
 end
 
-Connection = require('metamodule').new(Connection, 'postgres')
+Connection = require('metamodule').new(Connection)
 
 --- connect
 --- @param conninfo? string
