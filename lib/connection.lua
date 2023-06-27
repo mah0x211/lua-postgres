@@ -143,9 +143,7 @@ local new_result = require('postgres.result').new
 --- @type fun(conninfo?: string, nonblock?: boolean): postgres.pgconn
 local pgconn = require('postgres.pgconn')
 
-local DEFAULT_DEADLINE = 3000
-
---- @class postgres.connection : postgres
+--- @class postgres.connection
 --- @field conn postgres.pgconn
 --- @field nonblock boolean
 local Connection = {}
@@ -153,7 +151,7 @@ local Connection = {}
 --- init
 --- @param conn postgres.pgconn
 --- @param conninfo string
---- @return postgres
+--- @return postgres.connection
 function Connection:init(conn, conninfo)
     self.conn = conn
     self.conninfo = conninfo
@@ -168,7 +166,7 @@ end
 function Connection:wait_readable(msec)
     local wait_readable = pollable() and poll_readable or io_readable
     -- wait until readable
-    return wait_readable(self.conn:socket(), msec or DEFAULT_DEADLINE)
+    return wait_readable(self.conn:socket(), msec)
 end
 
 --- wait_writable
@@ -179,7 +177,7 @@ end
 function Connection:wait_writable(msec)
     local wait_writable = pollable() and poll_writable or io_writable
     -- wait until writable
-    return wait_writable(self.conn:socket(), msec or DEFAULT_DEADLINE)
+    return wait_writable(self.conn:socket(), msec)
 end
 
 --- close
