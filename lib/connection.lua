@@ -436,14 +436,11 @@ end
 --- @param query string
 --- @param params table
 --- @return string? query
---- @return table? params
 --- @return any err
+--- @return table? params
 function Connection:replace_named_params(query, params)
-    if not is_string(query) then
-        error('query must be string', 2)
-    elseif not is_table(params) then
-        error('params must be table', 2)
-    end
+    assert(is_string(query), 'query must be string')
+    assert(is_table(params), 'params must be table')
 
     local newparams = {
         unpack(params),
@@ -512,10 +509,10 @@ function Connection:replace_named_params(query, params)
     end)
 
     if not ok then
-        return nil, nil, res
+        return nil, res
     end
 
-    return res, newparams
+    return res, nil, newparams
 end
 
 --- query
@@ -537,7 +534,7 @@ function Connection:query(query, params, msec, single_row_mode)
     end
 
     local err
-    query, params, err = self:replace_named_params(query, params)
+    query, err, params = self:replace_named_params(query, params)
     if not query then
         return nil, err
     end

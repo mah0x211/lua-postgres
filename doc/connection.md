@@ -477,7 +477,7 @@ see [libpq documentation: 34.4. PQflush](https://www.postgresql.org/docs/current
 - `timeout:boolean`: `true` if the operation would block.
 
 
-## qry, params, err = connection:replace_named_params( qry, params )
+## qry, err, params = connection:replace_named_params( qry, params )
 
 converts a named parameter `${NAME}` in an SQL query to a positional parameter `$<digit>` and returns the converted SQL query and parameter array.
 
@@ -489,15 +489,15 @@ converts a named parameter `${NAME}` in an SQL query to a positional parameter `
 **Returns**
 
 - `qry:string`: the SQL query with the named parameters replaced with the corresponding values.
-- `params:table`: the parameters.
 - `err:any`: the error object.
+- `params:table`: the parameters.
 
 **Example**
 
 ```lua
 local dump = require('dump')
 local conn = require('postgres.connection').new()
-local qry, params = conn:replace_named_params([[
+local qry, err, params = conn:replace_named_params([[
     SELECT
         *
     FROM
