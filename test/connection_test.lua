@@ -7,7 +7,7 @@ function testcase.new()
     local c = assert(new_connection())
     assert.match(c, '^postgres.connection: ', false)
 
-    -- test that create new connection with deadline
+    -- test that create new connection with msec
     c = assert(new_connection(nil, 1000))
     assert.match(c, '^postgres.connection: ', false)
 end
@@ -38,7 +38,7 @@ function testcase.replace_named_params()
         },
         baz = 'baz',
     }
-    local qry, newparams, err = c:replace_named_params(
+    local qry, err, newparams = c:replace_named_params(
                                     'SELECT ${foo}, ${bar}, ${baz}, ${foo}, ${bar}, ${unknown}',
                                     params)
     assert.equal(qry,
