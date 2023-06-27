@@ -117,8 +117,8 @@ function testcase.read_next()
         assert.equal(field.name, col.name)
     end
 
-    -- test that throws an error if deadline argument is invalid
-    local err = assert.throws(rows.next, rows, 'invalid deadline')
-    assert.match(err, 'deadline must be uint')
+    -- test that throws an error if msec argument is invalid
+    local err = assert.throws(rows.next, rows, 'invalid msec')
+    assert.match(err, 'msec must be uint')
 end
 

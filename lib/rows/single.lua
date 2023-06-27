@@ -28,18 +28,17 @@ local is_uint = isa.uint
 local SingleRows = {}
 
 --- next retrives the next row
---- @param deadline? integer
+--- @param msec? integer
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function SingleRows:next(deadline)
-    if deadline ~= nil and not is_uint(deadline) then
-        error('deadline must be uint', 2)
-    elseif self.done then
+function SingleRows:next(msec)
+    assert(is_uint(msec) or msec == nil, 'msec must be uint or nil')
+    if self.done then
         return false
     end
 
-    local res, err, timeout = self.res:next(deadline)
+    local res, err, timeout = self.res:next(msec)
     if not res then
         return false, err, timeout
     elseif res:status() ~= 'single_tuple' then

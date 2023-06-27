@@ -42,12 +42,12 @@ function Result:init(conn, res)
 end
 
 --- next
---- @param deadline? integer
+--- @param msec? integer
 --- @return postgres.result? res
 --- @return any err
 --- @return boolean? timeout
-function Result:next(deadline)
-    return self.conn:get_result(deadline)
+function Result:next(msec)
+    return self.conn:get_result(msec)
 end
 
 --- clear

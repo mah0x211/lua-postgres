@@ -140,7 +140,7 @@ local new_result = require('postgres.result').new
 --- @field escape_bytea_conn fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
 --- @field encrypt_password_conn fun(self: postgres.pgconn, user:string, password:string, algorithm?:string):(encrypted:string?, err:any)
 
---- @type fun(conninfo: string, nonblock?: boolean): postgres.pgconn
+--- @type fun(conninfo?: string, nonblock?: boolean): postgres.pgconn
 local pgconn = require('postgres.pgconn')
 
 local DEFAULT_DEADLINE = 3000
@@ -161,25 +161,25 @@ function Connection:init(conn, conninfo)
 end
 
 --- wait_readable
---- @param deadline? integer
+--- @param msec? integer
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Connection:wait_readable(deadline)
+function Connection:wait_readable(msec)
     local wait_readable = pollable() and poll_readable or io_readable
     -- wait until readable
-    return wait_readable(self.conn:socket(), deadline or DEFAULT_DEADLINE)
+    return wait_readable(self.conn:socket(), msec or DEFAULT_DEADLINE)
 end
 
 --- wait_writable
---- @param deadline? integer
+--- @param msec? integer
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Connection:wait_writable(deadline)
+function Connection:wait_writable(msec)
     local wait_writable = pollable() and poll_writable or io_writable
     -- wait until writable
-    return wait_writable(self.conn:socket(), deadline or DEFAULT_DEADLINE)
+    return wait_writable(self.conn:socket(), msec or DEFAULT_DEADLINE)
 end
 
 --- close
@@ -393,11 +393,11 @@ function Connection:encrypt_password_conn(passwd, user, algorithm)
 end
 
 --- flush
---- @param deadline integer
+--- @param msec? integer
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Connection:flush(deadline)
+function Connection:flush(msec)
     while true do
         local ok, err, again = self.conn:flush()
         if not again then
@@ -405,7 +405,7 @@ function Connection:flush(deadline)
         end
 
         local timeout
-        ok, err, timeout = self:wait_writable(deadline)
+        ok, err, timeout = self:wait_writable(msec)
         if not ok then
             return false, err, timeout
         end
@@ -413,23 +413,23 @@ function Connection:flush(deadline)
 end
 
 --- stringify
---- @param v any
---- @return any v
---- @return any err
-local function stringify(v)
-    local t = type(v)
-    if t == 'string' then
-        return v, t
-    elseif t == 'nil' then
-        return 'NULL', t
-    elseif t == 'boolean' then
-        return v and 'TRUE' or 'FALSE', t
-    elseif t == 'number' then
-        return tostring(v)
-    elseif t == 'table' then
-        return v, t
+--- @param val any
+--- @return any val
+--- @return string type
+local function stringify(val)
+    local typ = type(val)
+    if typ == 'string' then
+        return val, typ
+    elseif typ == 'nil' then
+        return 'NULL', typ
+    elseif typ == 'boolean' then
+        return val and 'TRUE' or 'FALSE', typ
+    elseif typ == 'number' then
+        return tostring(val), typ
+    elseif typ == 'table' then
+        return val, typ
     end
-    return nil, t
+    return nil, typ
 end
 
 --- replace_named_params
@@ -455,14 +455,14 @@ function Connection:replace_named_params(query, params)
         end
 
         -- convert to positional parameters
-        local v, t = stringify(params[name])
+        local val, typ = stringify(params[name])
 
-        if not v then
+        if not val then
             error(format('invalid parameter %q: data type %q is not supported',
-                         name, t))
-        elseif t ~= 'table' then
+                         name, typ))
+        elseif typ ~= 'table' then
             -- add positional parameter
-            newparams[#newparams + 1] = v
+            newparams[#newparams + 1] = val
             param_ids[name] = '$' .. #newparams
             return param_ids[name]
         end
@@ -471,36 +471,36 @@ function Connection:replace_named_params(query, params)
         local stack = {}
         local ctx = {
             ids = {},
-            tbl = v,
+            tbl = val,
         }
-        ctx.idx, v = next(ctx.tbl)
-        while v do
-            v, t = stringify(v)
-            if not v then
+        ctx.idx, val = next(ctx.tbl)
+        while val do
+            val, typ = stringify(val)
+            if not val then
                 error(format(
                           'invalid parameter %q: data type %q is not supported',
-                          name, t))
-            elseif t ~= 'table' then
+                          name, typ))
+            elseif typ ~= 'table' then
                 -- convert to positional parameters
-                newparams[#newparams + 1] = v
+                newparams[#newparams + 1] = val
                 ctx.ids[#ctx.ids + 1] = '$' .. #newparams
             else
                 stack[#stack + 1] = ctx
                 ctx = {
                     ids = {},
-                    tbl = v,
+                    tbl = val,
                 }
             end
 
-            ctx.idx, v = next(ctx.tbl, ctx.idx)
-            if not v then
+            ctx.idx, val = next(ctx.tbl, ctx.idx)
+            if not val then
                 while #stack > 0 do
                     local child = ctx
                     ctx, stack[#stack] = stack[#stack], nil
                     ctx.ids[#ctx.ids + 1] =
                         '{' .. concat(child.ids, ', ') .. '}'
-                    ctx.idx, v = next(ctx.tbl, ctx.idx)
-                    if v then
+                    ctx.idx, val = next(ctx.tbl, ctx.idx)
+                    if val then
                         break
                     end
                 end
@@ -521,23 +521,19 @@ end
 --- query
 --- @param query string
 --- @param params? table?
---- @param deadline integer
---- @param single_row_mode boolean
+--- @param msec? integer
+--- @param single_row_mode? boolean
 --- @return postgres.result? res
 --- @return any err
 --- @return boolean? timeout
-function Connection:query(query, params, deadline, single_row_mode)
-    if not is_string(query) then
-        error('query must be string', 2)
-    elseif params == nil then
+function Connection:query(query, params, msec, single_row_mode)
+    assert(is_string(query), 'query must be string')
+    assert(params == nil or is_table(params), 'params must be table or nil')
+    assert(msec == nil or is_uint(msec), 'msec must be uint or nil')
+    assert(single_row_mode == nil or is_boolean(single_row_mode),
+           'single_row_mode must be boolean or nil')
+    if params == nil then
         params = {}
-    elseif not is_table(params) then
-        error('params must be table', 2)
-    end
-    if deadline ~= nil and not is_uint(deadline) then
-        error('deadline must be uint', 2)
-    elseif single_row_mode ~= nil and not is_boolean(single_row_mode) then
-        error('single_row_mode must be boolean', 2)
     end
 
     local err
@@ -557,25 +553,23 @@ function Connection:query(query, params, deadline, single_row_mode)
     end
 
     local timeout
-    ok, err, timeout = self:flush(deadline)
+    ok, err, timeout = self:flush(msec)
     if not ok then
         return nil, err, timeout
     elseif single_row_mode then
         assert(self.conn:set_single_row_mode(), 'failed to set single row mode')
     end
 
-    return self:get_result(deadline)
+    return self:get_result(msec)
 end
 
 --- get_result
---- @param deadline? integer
+--- @param msec? integer
 --- @return postgres.result? res
 --- @return any err
 --- @return boolean? timeout
-function Connection:get_result(deadline)
-    if deadline ~= nil and not is_uint(deadline) then
-        error('deadline must be uint', 2)
-    end
+function Connection:get_result(msec)
+    assert(msec == nil or is_uint(msec), 'msec must be uint or nil')
 
     while true do
         local busy, err = self.conn:is_busy()
@@ -591,7 +585,7 @@ function Connection:get_result(deadline)
         end
 
         -- wait until readable
-        local ok, werr, timeout = self:wait_readable(deadline)
+        local ok, werr, timeout = self:wait_readable(msec)
         if not ok then
             return nil, werr, timeout
         end
@@ -614,20 +608,17 @@ Connection = require('metamodule').new(Connection)
 
 --- connect
 --- @param conninfo? string
---- @param deadline integer
+--- @param msec? integer
 --- @return postgres.connection? conn
 --- @return any err
 --- @return boolean? timeout
-local function new(conninfo, deadline)
-    conninfo = conninfo or ''
-    if not is_string(conninfo) then
-        error('conninfo must be string', 2)
-    elseif deadline ~= nil and not is_uint(deadline) then
-        error('deadline must be uint', 2)
-    end
+local function new(conninfo, msec)
+    assert(conninfo == nil or is_string(conninfo),
+           'conninfo must be string or nil')
+    assert(msec == nil or is_uint(msec), 'msec must be uint or nil')
 
     local is_pollable = pollable()
-    local is_nonblock = is_pollable or deadline ~= nil
+    local is_nonblock = is_pollable or msec ~= nil
     local conn, err = pgconn(conninfo, is_nonblock)
     if err then
         return nil, err
@@ -640,7 +631,7 @@ local function new(conninfo, deadline)
     end
 
     -- async connect
-    local c = Connection(conn, conninfo)
+    local c = Connection(conn, conninfo or '')
     while true do
         -- check status
         status = conn:connect_poll()
@@ -653,9 +644,9 @@ local function new(conninfo, deadline)
         -- polling a status
         local ok, timeout
         if status == 'reading' then
-            ok, err, timeout = c:wait_readable(deadline)
+            ok, err, timeout = c:wait_readable(msec)
         elseif status == 'writing' then
-            ok, err, timeout = c:wait_writable(deadline)
+            ok, err, timeout = c:wait_writable(msec)
         else
             return nil, format('got unsupported status: %d', status)
         end
