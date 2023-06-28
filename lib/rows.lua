@@ -35,7 +35,7 @@ function Rows:init(res, nrow, fields)
     self.res = res
     self.nrow = nrow
     self.fields = fields
-    self.rowi = 1
+    self.rowi = 0
     self.coli = 1
     return self
 end
@@ -46,6 +46,19 @@ end
 --- @return boolean? timeout
 function Rows:close()
     return self.res:close()
+end
+
+--- next retrives the next row
+--- @return boolean ok
+function Rows:next()
+    if self.rowi < self.nrow then
+        -- set to next row index
+        self.rowi = self.rowi + 1
+        -- reset column position
+        self.coli = 1
+        return true
+    end
+    return false
 end
 
 --- result
@@ -59,7 +72,7 @@ end
 --- @return table? field
 --- @return string? val
 function Rows:readat(col)
-    local field = self.fields[col]
+    local field = self.rowi > 0 and self.fields[col]
     if field then
         return field, self.res:value(self.rowi, field.col)
     end
@@ -69,26 +82,11 @@ end
 --- @return table? field
 --- @return string? val
 function Rows:read()
-    local field = self.fields[self.coli]
+    local field = self.rowi > 0 and self.fields[self.coli]
     if field then
         self.coli = self.coli + 1
         return field, self.res:value(self.rowi, field.col)
     end
-end
-
---- next retrives the next row
---- @return boolean ok
---- @return any err
---- @return boolean? timeout
-function Rows:next()
-    if self.rowi < self.nrow then
-        -- set to next row index
-        self.rowi = self.rowi + 1
-        -- reset column position
-        self.coli = 1
-        return true
-    end
-    return false
 end
 
 return {

@@ -38,8 +38,7 @@ function testcase.read_next()
         ) t1 (a, b);
     ]], nil, nil, true))
     local rows = assert(res:rows())
-
-    -- print(dump(rows))
+    assert(rows:next())
 
     -- test that read column value
     local list = {}
@@ -100,6 +99,7 @@ function testcase.read_next()
 
     -- test that next query result
     rows = assert(rows:result():next():rows())
+    assert(rows:next())
     for i, col in pairs({
         {
             name = 'a',

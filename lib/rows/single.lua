@@ -36,6 +36,9 @@ function SingleRows:next(msec)
     assert(is_uint(msec) or msec == nil, 'msec must be uint or nil')
     if self.done then
         return false
+    elseif self.rowi ~= 1 then
+        self.rowi = 1
+        return true
     end
 
     local res, err, timeout = self.res:next(msec)

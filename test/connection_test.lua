@@ -75,6 +75,7 @@ function testcase.query()
 
     local rows = assert(res:rows())
     local cols = {}
+    assert(rows:next())
     for _ = 1, 5 do
         local field, val = rows:read()
         cols[field.col] = val
