@@ -24,6 +24,19 @@ close the `postgres.result` instance.
 see also documentation of [postgres.result:close()](result.md#ok-err-timeout--resultclose) method.
 
 
+## ok = rows:next()
+
+move the current position to the next row and reset the column position to the first column.  
+
+**NOTE**
+
+you should call this method before reading the first row.
+
+**Returns**
+
+- `ok:boolean`: `true` if the current position is moved to the next row.
+
+
 ## result = rows:result()
 
 get the `postgres.result` instance.
@@ -57,14 +70,4 @@ after reading, the current position is moved to the next column.
 - `field:table`: column info.
 - `val:string`: value of the column.
 
-
-## ok, err, timeout = rows:next()
-
-move the current position to the next row and reset the column position to the first column.
-
-**Returns**
-
-- `ok:boolean`: `true` if the current position is moved to the next row.
-- `err:any`: error message.
-- `timeout:boolean`: `true` if the next result fetch times out.
 

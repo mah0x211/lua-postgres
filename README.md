@@ -40,21 +40,16 @@ end
 -- read the result rows
 local nrec = 0
 local rows = assert(res:rows())
-while rows do
+-- read the next row
+while rows:next() do
     nrec = nrec + 1
     print(('-[ RECORD %' .. recwidth .. 'd ]-+------------'):format(nrec))
 
     -- read the columns of the current row
     local field, value = rows:read()
     while field do
-        print(('%' .. colwidth .. 's | %s'):format(field.name, value))
+        print(('%' .. colwidth .. 's | %s'):format(field.name, value or ''))
         field, value = rows:read()
-    end
-
-    -- read the next row
-    if not rows:next() then
-        -- no more rows
-        break
     end
 end
 
