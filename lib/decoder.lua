@@ -1752,18 +1752,26 @@ function Decoder:register(oid, name, decodefn)
     self:register_oid2name(oid, name)
 end
 
+--- decode_by_name decodes a data string by specified type name
+--- @param name string
+--- @param s string
+--- @return any value
+--- @return any error
+function Decoder:decode_by_name(name, s)
+    local decodefn = name and self.name2dec[name]
+    if decodefn then
+        return decodefn(s)
+    end
+    return s
+end
+
 --- decode decodes a field value
 --- @param oid integer
 --- @param s string
 --- @return any value
 --- @return any error
 function Decoder:decode(oid, s)
-    local name = self.oid2name[oid]
-    local decodefn = name and self.name2dec[name]
-    if decodefn then
-        return decodefn(s)
-    end
-    return s
+    return self:decode_by_name(self.oid2name[oid], s)
 end
 
 return {
