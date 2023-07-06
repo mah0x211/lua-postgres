@@ -4,7 +4,7 @@
 local SELECT_DATATYPES = [[
 SELECT
     t.oid AS oid,
-    replace(pg_catalog.format_type(t.oid, NULL), ' ', '_') AS "name",
+    pg_catalog.format_type(t.oid, NULL) AS "name",
     CASE t.typtype
         WHEN 'b' THEN 'base'
         WHEN 'c' THEN 'composite'
@@ -134,7 +134,7 @@ for _, typeinfo in ipairs(typelist) do
     end
 
     if name then
-        local decoder = format('decode_%s', name)
+        local decoder = format('decode_%s', gsub(name, ' ', '_'))
 
         local repl = {
             ['$OID'] = typeinfo.oid,
