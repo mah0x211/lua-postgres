@@ -19,6 +19,8 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 --
+local DEFAULT_DECODER = require('postgres.decoder').new()
+
 --- @class postgres.rows
 --- @field res postgres.result
 --- @field nrow integer
@@ -67,7 +69,7 @@ function Rows:result()
     return self.res
 end
 
---- read specified column value
+--- readat read specified column value
 --- @param col integer|string column name, or column number started with 1
 --- @return table? field
 --- @return string? val
@@ -78,7 +80,7 @@ function Rows:readat(col)
     end
 end
 
---- read next column value
+--- read read next column value
 --- @return table? field
 --- @return string? val
 function Rows:read()
@@ -86,6 +88,41 @@ function Rows:read()
     if field then
         self.coli = self.coli + 1
         return field, self.res:value(self.rowi, field.col)
+    end
+end
+
+--- scanat scan specified column value
+--- @param col integer|string column name, or column number started with 1
+--- @param decoder? postgres.decoder
+--- @return any val
+--- @return any err
+--- @return table? field
+function Rows:scanat(col, decoder)
+    if decoder == nil then
+        decoder = DEFAULT_DECODER
+    end
+
+    local field, val = self:readat(col)
+    if field and val then
+        local dval, err = decoder:decode(field.type, val)
+        return dval, err, field
+    end
+end
+
+--- scan scan next column value
+--- @param decoder? postgres.decoder
+--- @return any val
+--- @return any err
+--- @return table? field
+function Rows:scan(decoder)
+    if decoder == nil then
+        decoder = DEFAULT_DECODER
+    end
+
+    local field, val = self:read()
+    if field and val then
+        local dval, err = decoder:decode(field.type, val)
+        return dval, err, field
     end
 end
 
