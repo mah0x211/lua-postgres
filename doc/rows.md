@@ -71,3 +71,33 @@ after reading, the current position is moved to the next column.
 - `val:string`: value of the column.
 
 
+## val, err, field = rows:scanat( col [, decoder] )
+
+read the column info and the value at the specified column position then decode the value.
+
+**Parameters**
+
+- `col:integer|string`: column number or name.
+- `decoder:postgres.decoder`: [postgres.decoder](decoder.md) object. if not specified, use the default decoder.
+
+**Returns**
+
+- `val:string`: value of the column.
+- `err:any`: decode error.
+- `field:table`: column info.
+
+
+## val, err, field = rows:scan( [decoder] )
+
+read the column info and the value at the current column position then decode the value.  
+after reading, the current position is moved to the next column.
+
+**Parameters**
+
+- `decoder:postgres.decoder`: `postgres.decoder` object. if not specified, use the default decoder.
+
+**Returns**
+
+- `val:string`: value of the column.
+- `err:any`: decode error.
+- `field:table`: column info.

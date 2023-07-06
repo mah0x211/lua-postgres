@@ -7,9 +7,12 @@ function testcase.close()
     local res = assert(c:query([[
         SELECT 1 AS a, 2 AS b, TRUE AS c
     ]]))
-    local rows = assert(res:rows())
 
-    -- test that close result
+    -- test that return postgres.rows object
+    local rows = assert(res:rows())
+    assert.match(rows, '^postgres%.rows: ', false)
+
+    -- test that close associated result
     local ok, err, timeout = rows:close()
     assert.is_true(ok)
     assert.is_nil(err)
@@ -23,96 +26,152 @@ function testcase.result()
     ]]))
     local rows = assert(res:rows())
 
-    -- test that return result
+    -- test that return associated result
     assert.equal(rows:result(), res)
 end
 
-function testcase.read_next()
+function testcase.next()
     local c = assert(new_connection())
     local res = assert(c:query([[
-        SELECT * FROM (
-            VALUES (1, 10), (2, 20)
-        ) t1 (a, b);
-        SELECT * FROM (
-            VALUES (10, 100), (20, 200)
-        ) t1 (a, b);
+        SELECT 1, 10
+    ]]))
+    local rows = assert(res:rows())
+
+    -- test that return true if the first row exists
+    assert.is_true(rows:next())
+    -- test that return false if no more row exists
+    assert.is_false(rows:next())
+    res:close()
+end
+
+function testcase.readat()
+    local c = assert(new_connection())
+    local res = assert(c:query([[
+        SELECT 123 AS a, 456 AS b
     ]]))
     local rows = assert(res:rows())
     assert(rows:next())
 
-    -- test that read column value
-    local list = {}
-    local field, v = rows:read()
-    while field do
-        list[#list + 1] = {
-            name = field.name,
-            value = v,
-            col = #list + 1,
-        }
-        field, v = rows:read()
-    end
-    assert.equal(list, {
-        {
-            col = 1,
-            name = 'a',
-            value = '1',
-        },
-        {
-            col = 2,
-            name = 'b',
-            value = '10',
-        },
-    })
-
-    -- test that return true if next row exists
-    assert.is_true(rows:next())
-    list = {}
-    field, v = rows:read()
-    while field do
-        list[#list + 1] = {
-            name = field.name,
-            value = v,
-            col = #list + 1,
-        }
-        field, v = rows:read()
-    end
-    assert(list, {
-        {
-            col = 1,
-            name = 'a',
-            value = '2',
-        },
-        {
-            col = 2,
-            name = 'b',
-            value = '20',
-        },
-    })
-
-    -- test that return false if no more row exists
-    assert.is_false(rows:next())
-
-    -- test that a next method can be called twice
-    assert.is_false(rows:next())
-
-    -- test that next query
-    rows = assert(rows:result():next():rows())
-    assert(rows:next())
-    for i, col in pairs({
+    -- test that read specified column value
+    for i, cmp in ipairs({
         {
             name = 'a',
-            value = '10',
+            value = '123',
         },
         {
             name = 'b',
-            value = '100',
+            value = '456',
         },
     }) do
-        -- test that read column value
-        field, v = rows:readat(i)
-        assert.equal(v, col.value)
-        assert.equal(field.col, i)
-        assert.equal(field.name, col.name)
+        local field, v = rows:readat(i)
+        assert.equal(field.name, cmp.name)
+        assert.equal(v, cmp.value)
     end
+
+    -- test that return nil if specified column not exists
+    local field, v = rows:readat(3)
+    assert.is_nil(field)
+    assert.is_nil(v)
 end
 
+function testcase.read()
+    local c = assert(new_connection())
+    local res = assert(c:query([[
+        SELECT 123 AS a, 456 AS b
+    ]]))
+    local rows = assert(res:rows())
+    assert(rows:next())
+
+    -- test that read each column value
+    for _, cmp in ipairs({
+        {
+            name = 'a',
+            value = '123',
+        },
+        {
+            name = 'b',
+            value = '456',
+        },
+    }) do
+        local field, v = rows:read()
+        assert.equal(field.name, cmp.name)
+        assert.equal(v, cmp.value)
+    end
+
+    -- test that return nil if no more column exists
+    local field, v = rows:read()
+    assert.is_nil(field)
+    assert.is_nil(v)
+end
+
+function testcase.scanat()
+    local c = assert(new_connection())
+    local res = assert(c:query([[
+        SELECT 123::integer AS a, '1999-05-12'::date AS b
+    ]]))
+    local rows = assert(res:rows())
+    assert(rows:next())
+
+    -- test that scan specified column value and return the decoded value
+    for i, cmp in ipairs({
+        {
+            name = 'a',
+            value = 123,
+        },
+        {
+            name = 'b',
+            value = {
+                year = 1999,
+                month = 5,
+                day = 12,
+            },
+        },
+    }) do
+        local v, err, field = rows:scanat(i)
+        assert.is_nil(err)
+        assert.equal(field.name, cmp.name)
+        assert.equal(v, cmp.value)
+    end
+
+    -- test that return nil if specified column not exists
+    local v, err, field = rows:scanat(3)
+    assert.is_nil(v)
+    assert.is_nil(err)
+    assert.is_nil(field)
+end
+
+function testcase.scan()
+    local c = assert(new_connection())
+    local res = assert(c:query([[
+        SELECT 123::integer AS a, '1999-05-12'::date AS b
+    ]]))
+    local rows = assert(res:rows())
+    assert(rows:next())
+
+    -- test that scan each column value and return the decoded value
+    for _, cmp in ipairs({
+        {
+            name = 'a',
+            value = 123,
+        },
+        {
+            name = 'b',
+            value = {
+                year = 1999,
+                month = 5,
+                day = 12,
+            },
+        },
+    }) do
+        local v, err, field = rows:scan()
+        assert.is_nil(err)
+        assert.equal(field.name, cmp.name)
+        assert.equal(v, cmp.value)
+    end
+
+    -- test that return nil if specified column not exists
+    local v, err, field = rows:scan()
+    assert.is_nil(v)
+    assert.is_nil(err)
+    assert.is_nil(field)
+end
