@@ -5,4 +5,5 @@
 - [postgres.result](result.md)
 - [postgres.rows](rows.md)
 - [postgres.rows.single](rows.md)
+- [postgres.decoder](decoder.md)
 
