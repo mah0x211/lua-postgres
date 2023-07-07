@@ -70,6 +70,77 @@ after reading, the current position is moved to the next column.
 - `field:table`: column info.
 - `val:string`: value of the column.
 
+**Example**
+
+```lua
+local dump = require('dump')
+local connection = require('postgres.connection')
+
+-- connect to the database
+local conn = assert(connection.new())
+
+-- execute a query
+local res = assert(conn:query([[
+    SELECT 1::integer, 'foo', '1999-05-12 12:14:01.1234'::timestamp
+]]))
+local rows = assert(res:rows())
+while rows:next() do
+    -- read the columns of the current row and update the current position
+    local field, value = rows:read()
+    while field do
+        -- dump the column info and the value
+        print(dump({
+            field = field,
+            value = value,
+        }))
+        field, value = rows:read()
+    end
+end
+-- close the result
+res:close()
+
+-- above code outputs the following:
+-- {
+--     field = {
+--         col = 1,
+--         format = 0,
+--         mod = -1,
+--         name = "int4",
+--         size = 4,
+--         table = 0,
+--         tablecol = 0,
+--         type = 23
+--     },
+--     value = "1"
+-- }
+-- {
+--     field = {
+--         col = 2,
+--         format = 0,
+--         mod = -1,
+--         name = "?column?",
+--         size = -1,
+--         table = 0,
+--         tablecol = 0,
+--         type = 25
+--     },
+--     value = "foo"
+-- }
+-- {
+--     field = {
+--         col = 3,
+--         format = 0,
+--         mod = -1,
+--         name = "timestamp",
+--         size = 8,
+--         table = 0,
+--         tablecol = 0,
+--         type = 1114
+--     },
+--     value = "1999-05-12 12:14:01.1234"
+-- }
+```
+
 
 ## val, err, field = rows:scanat( col [, decoder] )
 
@@ -101,3 +172,86 @@ after reading, the current position is moved to the next column.
 - `val:string`: value of the column.
 - `err:any`: decode error.
 - `field:table`: column info.
+
+**Example**
+
+```lua
+local dump = require('dump')
+local connection = require('postgres.connection')
+
+-- connect to the database
+local conn = assert(connection.new())
+
+-- execute a query
+local res = assert(conn:query([[
+    SELECT 1::integer, 'foo', '1999-05-12 12:14:01.1234'::timestamp
+]]))
+local rows = assert(res:rows())
+while rows:next() do
+    -- read the columns of the current row and update the current position
+    local value, err, field = rows:scan()
+    while value do
+        -- dump the column info and the value
+        print(dump({
+            field = field,
+            value = value,
+        }))
+        value, err, field = rows:scan()
+    end
+    if err then
+        error(err)
+    end
+end
+
+-- close the result
+res:close()
+
+-- above code outputs the following:
+-- {
+--     field = {
+--         col = 1,
+--         format = 0,
+--         mod = -1,
+--         name = "int4",
+--         size = 4,
+--         table = 0,
+--         tablecol = 0,
+--         type = 23
+--     },
+--     value = 1
+-- }
+-- {
+--     field = {
+--         col = 2,
+--         format = 0,
+--         mod = -1,
+--         name = "?column?",
+--         size = -1,
+--         table = 0,
+--         tablecol = 0,
+--         type = 25
+--     },
+--     value = "foo"
+-- }
+-- {
+--     field = {
+--         col = 3,
+--         format = 0,
+--         mod = -1,
+--         name = "timestamp",
+--         size = 8,
+--         table = 0,
+--         tablecol = 0,
+--         type = 1114
+--     },
+--     value = {
+--         day = 12,
+--         hour = 12,
+--         min = 14,
+--         month = 5,
+--         sec = 1,
+--         usec = 123400,
+--         year = 1999
+--     }
+-- }
+```
