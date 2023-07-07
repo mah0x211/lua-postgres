@@ -1706,8 +1706,8 @@ OID2NAME[6157] = "int8multirange[]"
 NAME2DEC["int8multirange[]"] = decode_int8multirange_array
 
 --- @class postgres.decoder
---- @field oid2name table<integer, string> oid to name
---- @field name2dec table<string, function> name to decode function
+--- @field private oid2name table<integer, string> oid to name
+--- @field private name2dec table<string, function> name to decode function
 local Decoder = {}
 
 --- init
@@ -1765,12 +1765,12 @@ function Decoder:decode_by_name(name, s)
     return s
 end
 
---- decode decodes a field value
+--- decode_by_oid decodes a data string by specified type oid
 --- @param oid integer
 --- @param s string
 --- @return any value
 --- @return any error
-function Decoder:decode(oid, s)
+function Decoder:decode_by_oid(oid, s)
     return self:decode_by_name(self.oid2name[oid], s)
 end
 
