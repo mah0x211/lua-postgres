@@ -2,6 +2,10 @@
 
 defined in [postgres.decoder](../lib/decoder.lua) module.
 
+**NOTE**
+
+check the `OID2NAME` and `NAME2DEC` tables in the source code for the data types supported by default.
+
 
 ## decoder = decoder.new()
 
@@ -14,7 +18,8 @@ create a new instance of `postgres.decoder`.
 
 ## decoder:register_name2dec( name, decodefn )
 
-register a decoder function for the specified name.
+register a decoder function for the specified name.  
+it replaces the existing decoder function if the name is already registered.
 
 **Parameters**
 
@@ -34,7 +39,8 @@ register a decoder function for the specified name.
 
 ## decoder:register_oid2name( oid, name )
 
-register a name for the specified oid.
+register a name for the specified oid.  
+it replaces the existing name if the oid is already registered.
 
 **Parameters**
 
@@ -44,7 +50,7 @@ register a name for the specified oid.
 
 ## decoder:register( oid, name, decodefn )
 
-register a decoder function for the specified oid and name.
+register a decoder function for the specified oid and name.  
 
 **NOTE:**
 
