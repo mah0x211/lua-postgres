@@ -812,15 +812,15 @@ OID2NAME[700] = "real"
 NAME2DEC["real"] = decode_real
 
 --           oid: 701
---          name: double_precision
+--          name: double precision
 --          type: base
 --     type_code: b
 --     array_oid: 1022
 --      category: numeric
 -- category_code: N
 --   description: double-precision floating point number, 8-byte storage
-OID2NAME[701] = "double_precision"
-NAME2DEC["double_precision"] = decode_double_precision
+OID2NAME[701] = "double precision"
+NAME2DEC["double precision"] = decode_double_precision
 
 --           oid: 718
 --          name: circle
@@ -1004,13 +1004,13 @@ OID2NAME[1014] = "character[]"
 NAME2DEC["character[]"] = decode_character_array
 
 --           oid: 1015
---          name: character_varying[]
+--          name: character varying[]
 --          type: base
 --     type_code: b
 --      category: array
 -- category_code: A
-OID2NAME[1015] = "character_varying[]"
-NAME2DEC["character_varying[]"] = decode_character_varying_array
+OID2NAME[1015] = "character varying[]"
+NAME2DEC["character varying[]"] = decode_character_varying_array
 
 --           oid: 1016
 --          name: bigint[]
@@ -1067,13 +1067,13 @@ OID2NAME[1021] = "real[]"
 NAME2DEC["real[]"] = decode_real_array
 
 --           oid: 1022
---          name: double_precision[]
+--          name: double precision[]
 --          type: base
 --     type_code: b
 --      category: array
 -- category_code: A
-OID2NAME[1022] = "double_precision[]"
-NAME2DEC["double_precision[]"] = decode_double_precision_array
+OID2NAME[1022] = "double precision[]"
+NAME2DEC["double precision[]"] = decode_double_precision_array
 
 --           oid: 1027
 --          name: polygon[]
@@ -1143,15 +1143,15 @@ OID2NAME[1042] = "character"
 NAME2DEC["character"] = decode_character
 
 --           oid: 1043
---          name: character_varying
+--          name: character varying
 --          type: base
 --     type_code: b
 --     array_oid: 1015
 --      category: string
 -- category_code: S
 --   description: varchar(length), non-blank-padded string, variable storage length
-OID2NAME[1043] = "character_varying"
-NAME2DEC["character_varying"] = decode_character_varying
+OID2NAME[1043] = "character varying"
+NAME2DEC["character varying"] = decode_character_varying
 
 --           oid: 1082
 --          name: date
@@ -1165,38 +1165,36 @@ OID2NAME[1082] = "date"
 NAME2DEC["date"] = decode_date
 
 --           oid: 1083
---          name: time_without_time_zone
+--          name: time without time zone
 --          type: base
 --     type_code: b
 --     array_oid: 1183
 --      category: datetime
 -- category_code: D
 --   description: time of day
-OID2NAME[1083] = "time_without_time_zone"
-NAME2DEC["time_without_time_zone"] = decode_time_without_time_zone
+OID2NAME[1083] = "time without time zone"
+NAME2DEC["time without time zone"] = decode_time_without_time_zone
 
 --           oid: 1114
---          name: timestamp_without_time_zone
+--          name: timestamp without time zone
 --          type: base
 --     type_code: b
 --     array_oid: 1115
 --      category: datetime
 -- category_code: D
 --   description: date and time
-OID2NAME[1114] = "timestamp_without_time_zone"
-NAME2DEC["timestamp_without_time_zone"] = decode_timestamp_without_time_zone
+OID2NAME[1114] = "timestamp without time zone"
+NAME2DEC["timestamp without time zone"] = decode_timestamp_without_time_zone
 
--- LuaFormatter off
 --           oid: 1115
---          name: timestamp_without_time_zone[]
+--          name: timestamp without time zone[]
 --          type: base
 --     type_code: b
 --      category: array
 -- category_code: A
-OID2NAME[1115] = "timestamp_without_time_zone[]"
-NAME2DEC["timestamp_without_time_zone[]"] = decode_timestamp_without_time_zone_array
-
--- LuaFormatter on
+OID2NAME[1115] = "timestamp without time zone[]"
+NAME2DEC["timestamp without time zone[]"] =
+    decode_timestamp_without_time_zone_array
 
 --           oid: 1182
 --          name: date[]
@@ -1208,33 +1206,33 @@ OID2NAME[1182] = "date[]"
 NAME2DEC["date[]"] = decode_date_array
 
 --           oid: 1183
---          name: time_without_time_zone[]
+--          name: time without time zone[]
 --          type: base
 --     type_code: b
 --      category: array
 -- category_code: A
-OID2NAME[1183] = "time_without_time_zone[]"
-NAME2DEC["time_without_time_zone[]"] = decode_time_without_time_zone_array
+OID2NAME[1183] = "time without time zone[]"
+NAME2DEC["time without time zone[]"] = decode_time_without_time_zone_array
 
 --           oid: 1184
---          name: timestamp_with_time_zone
+--          name: timestamp with time zone
 --          type: base
 --     type_code: b
 --     array_oid: 1185
 --      category: datetime
 -- category_code: D
 --   description: date and time with time zone
-OID2NAME[1184] = "timestamp_with_time_zone"
-NAME2DEC["timestamp_with_time_zone"] = decode_timestamp_with_time_zone
+OID2NAME[1184] = "timestamp with time zone"
+NAME2DEC["timestamp with time zone"] = decode_timestamp_with_time_zone
 
 --           oid: 1185
---          name: timestamp_with_time_zone[]
+--          name: timestamp with time zone[]
 --          type: base
 --     type_code: b
 --      category: array
 -- category_code: A
-OID2NAME[1185] = "timestamp_with_time_zone[]"
-NAME2DEC["timestamp_with_time_zone[]"] = decode_timestamp_with_time_zone_array
+OID2NAME[1185] = "timestamp with time zone[]"
+NAME2DEC["timestamp with time zone[]"] = decode_timestamp_with_time_zone_array
 
 --           oid: 1186
 --          name: interval
@@ -1266,24 +1264,24 @@ OID2NAME[1231] = "numeric[]"
 NAME2DEC["numeric[]"] = decode_numeric_array
 
 --           oid: 1266
---          name: time_with_time_zone
+--          name: time with time zone
 --          type: base
 --     type_code: b
 --     array_oid: 1270
 --      category: datetime
 -- category_code: D
 --   description: time of day with time zone
-OID2NAME[1266] = "time_with_time_zone"
-NAME2DEC["time_with_time_zone"] = decode_time_with_time_zone
+OID2NAME[1266] = "time with time zone"
+NAME2DEC["time with time zone"] = decode_time_with_time_zone
 
 --           oid: 1270
---          name: time_with_time_zone[]
+--          name: time with time zone[]
 --          type: base
 --     type_code: b
 --      category: array
 -- category_code: A
-OID2NAME[1270] = "time_with_time_zone[]"
-NAME2DEC["time_with_time_zone[]"] = decode_time_with_time_zone_array
+OID2NAME[1270] = "time with time zone[]"
+NAME2DEC["time with time zone[]"] = decode_time_with_time_zone_array
 
 --           oid: 1560
 --          name: bit
@@ -1306,24 +1304,24 @@ OID2NAME[1561] = "bit[]"
 NAME2DEC["bit[]"] = decode_bit_array
 
 --           oid: 1562
---          name: bit_varying
+--          name: bit varying
 --          type: base
 --     type_code: b
 --     array_oid: 1563
 --      category: bit
 -- category_code: V
 --   description: variable-length bit string
-OID2NAME[1562] = "bit_varying"
-NAME2DEC["bit_varying"] = decode_bit_varying
+OID2NAME[1562] = "bit varying"
+NAME2DEC["bit varying"] = decode_bit_varying
 
 --           oid: 1563
---          name: bit_varying[]
+--          name: bit varying[]
 --          type: base
 --     type_code: b
 --      category: array
 -- category_code: A
-OID2NAME[1563] = "bit_varying[]"
-NAME2DEC["bit_varying[]"] = decode_bit_varying_array
+OID2NAME[1563] = "bit varying[]"
+NAME2DEC["bit varying[]"] = decode_bit_varying_array
 
 --           oid: 1700
 --          name: numeric
@@ -1708,8 +1706,8 @@ OID2NAME[6157] = "int8multirange[]"
 NAME2DEC["int8multirange[]"] = decode_int8multirange_array
 
 --- @class postgres.decoder
---- @field oid2name table<integer, string> oid to name
---- @field name2dec table<string, function> name to decode function
+--- @field private oid2name table<integer, string> oid to name
+--- @field private name2dec table<string, function> name to decode function
 local Decoder = {}
 
 --- init
@@ -1754,18 +1752,26 @@ function Decoder:register(oid, name, decodefn)
     self:register_oid2name(oid, name)
 end
 
---- decode decodes a field value
---- @param oid integer
+--- decode_by_name decodes a data string by specified type name
+--- @param name string
 --- @param s string
 --- @return any value
 --- @return any error
-function Decoder:decode(oid, s)
-    local name = self.oid2name[oid]
+function Decoder:decode_by_name(name, s)
     local decodefn = name and self.name2dec[name]
     if decodefn then
         return decodefn(s)
     end
     return s
+end
+
+--- decode_by_oid decodes a data string by specified type oid
+--- @param oid integer
+--- @param s string
+--- @return any value
+--- @return any error
+function Decoder:decode_by_oid(oid, s)
+    return self:decode_by_name(self.oid2name[oid], s)
 end
 
 return {

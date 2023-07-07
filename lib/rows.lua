@@ -104,7 +104,7 @@ function Rows:scanat(col, decoder)
 
     local field, val = self:readat(col)
     if field and val then
-        local dval, err = decoder:decode(field.type, val)
+        local dval, err = decoder:decode_by_oid(field.type, val)
         return dval, err, field
     end
 end
@@ -121,7 +121,7 @@ function Rows:scan(decoder)
 
     local field, val = self:read()
     if field and val then
-        local dval, err = decoder:decode(field.type, val)
+        local dval, err = decoder:decode_by_oid(field.type, val)
         return dval, err, field
     end
 end

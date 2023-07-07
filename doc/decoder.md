@@ -46,6 +46,11 @@ register a name for the specified oid.
 
 register a decoder function for the specified oid and name.
 
+**NOTE:**
+
+this method is equivalent to calling 
+`decoder:register_name2dec( name, decodefn )` after `decoder:register_oid2name( oid, name )`.
+
 **Parameters**
 
 - `oid:integer`: oid of the data type.
@@ -53,9 +58,28 @@ register a decoder function for the specified oid and name.
 - `decodefn:function`: decode function.
 
 
-## val, err = decoder:decode( oid, str )
+## val, err = decoder:decode_by_name( name, str )
 
-decode the specified string with the specified oid.
+decode the specified string with the decode function associated with the specified name.
+
+**NOTE**
+
+if the decode function for the specified name is not registered, it just returns the specified string.
+
+**Parameters**
+
+- `name:integer`: name of the data type.
+- `str:string`: string to decode.
+
+**Returns**
+
+- `val:any`: decoded value.
+- `err:any`: decode error.
+
+
+## val, err = decoder:decode_by_oid( oid, str )
+
+decode the specified string with the decode function associated with the specified oid.
 
 **NOTE**
 
