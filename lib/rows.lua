@@ -94,9 +94,9 @@ end
 --- scanat scan specified column value
 --- @param col integer|string column name, or column number started with 1
 --- @param decoder? postgres.decoder
+--- @return table? field
 --- @return any val
 --- @return any err
---- @return table? field
 function Rows:scanat(col, decoder)
     if decoder == nil then
         decoder = DEFAULT_DECODER
@@ -104,16 +104,16 @@ function Rows:scanat(col, decoder)
 
     local field, val = self:readat(col)
     if field and val then
-        local dval, err = decoder:decode_by_oid(field.type, val)
-        return dval, err, field
+        return field, decoder:decode_by_oid(field.type, val)
     end
+    return field
 end
 
 --- scan scan next column value
 --- @param decoder? postgres.decoder
+--- @return table? field
 --- @return any val
 --- @return any err
---- @return table? field
 function Rows:scan(decoder)
     if decoder == nil then
         decoder = DEFAULT_DECODER
@@ -121,9 +121,9 @@ function Rows:scan(decoder)
 
     local field, val = self:read()
     if field and val then
-        local dval, err = decoder:decode_by_oid(field.type, val)
-        return dval, err, field
+        return field, decoder:decode_by_oid(field.type, val)
     end
+    return field
 end
 
 return {

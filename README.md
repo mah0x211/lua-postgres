@@ -48,7 +48,7 @@ while rows:next() do
     -- read the columns of the current row
     local field, value = rows:read()
     --
-    -- NOTE: you can also use the `local value, err, field = rows:scan()` method 
+    -- NOTE: you can also use the `local field, value, err = rows:scan()` method 
     -- to get the decoded values if data types are known.
     -- please see the doc/rows.md and doc/decoder.md for more details.
     --
