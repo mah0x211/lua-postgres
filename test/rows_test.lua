@@ -127,14 +127,14 @@ function testcase.scanat()
             },
         },
     }) do
-        local v, err, field = rows:scanat(i)
+        local field, v, err = rows:scanat(i)
         assert.is_nil(err)
         assert.equal(field.name, cmp.name)
         assert.equal(v, cmp.value)
     end
 
     -- test that return nil if specified column not exists
-    local v, err, field = rows:scanat(3)
+    local field, v, err = rows:scanat(3)
     assert.is_nil(v)
     assert.is_nil(err)
     assert.is_nil(field)
@@ -163,14 +163,14 @@ function testcase.scan()
             },
         },
     }) do
-        local v, err, field = rows:scan()
+        local field, v, err = rows:scan()
         assert.is_nil(err)
         assert.equal(field.name, cmp.name)
         assert.equal(v, cmp.value)
     end
 
     -- test that return nil if specified column not exists
-    local v, err, field = rows:scan()
+    local field, v, err = rows:scan()
     assert.is_nil(v)
     assert.is_nil(err)
     assert.is_nil(field)

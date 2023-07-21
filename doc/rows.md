@@ -142,7 +142,7 @@ res:close()
 ```
 
 
-## val, err, field = rows:scanat( col [, decoder] )
+## field, val, err = rows:scanat( col [, decoder] )
 
 read the column info and the value at the specified column position then decode the value.
 
@@ -153,12 +153,12 @@ read the column info and the value at the specified column position then decode 
 
 **Returns**
 
+- `field:table`: column info.
 - `val:string`: value of the column.
 - `err:any`: decode error.
-- `field:table`: column info.
 
 
-## val, err, field = rows:scan( [decoder] )
+## field, val, err = rows:scan( [decoder] )
 
 read the column info and the value at the current column position then decode the value.  
 after reading, the current position is moved to the next column.
@@ -169,9 +169,9 @@ after reading, the current position is moved to the next column.
 
 **Returns**
 
+- `field:table`: column info.
 - `val:string`: value of the column.
 - `err:any`: decode error.
-- `field:table`: column info.
 
 **Example**
 
@@ -189,14 +189,14 @@ local res = assert(conn:query([[
 local rows = assert(res:rows())
 while rows:next() do
     -- read the columns of the current row and update the current position
-    local value, err, field = rows:scan()
-    while value do
+    local field, value, err = rows:scan()
+    while field do
         -- dump the column info and the value
         print(dump({
             field = field,
             value = value,
         }))
-        value, err, field = rows:scan()
+        field, value, err = rows:scan()
     end
     if err then
         error(err)
