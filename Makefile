@@ -6,9 +6,17 @@ LUASRCS=$(shell find lib -name '*.lua')
 INST_LUALIBDIR=$(INST_LUADIR)/postgres
 LUALIBS=$(patsubst lib/%,$(INST_LUALIBDIR)/%,$(LUASRCS))
 
-LIBPQ_INCDIR=$(shell pg_config --includedir)
-LIBPQ_LIBDIR=$(shell pg_config --libdir)
-INSTALL?=install
+PG_CONFIG:=$(shell which pg_config)
+ifndef PG_CONFIG
+$(error "pg_config command is not available in your PATH")
+endif
+LIBPQ_INCDIR:=$(shell pg_config --includedir)
+LIBPQ_LIBDIR:=$(shell pg_config --libdir)
+
+INSTALL:=$(shell which install)
+ifndef INSTALL
+$(error "install command is not available in your PATH")
+endif
 
 ifdef POSTGRES_COVERAGE
 COVFLAGS=--coverage
