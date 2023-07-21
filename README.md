@@ -6,15 +6,15 @@ lua-postgres
 
 PostgreSQL client for lua.
 
-**NOTE: this module is under heavy development.**
 
-***
 
 ## Installation
 
 ```
 luarocks install postgres
 ```
+
+***
 
 ## Usage
 
