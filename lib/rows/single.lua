@@ -24,7 +24,9 @@ local isa = require('isa')
 local is_uint = isa.uint
 
 --- @class postgres.rows.single : postgres.rows
---- @field done? boolean
+--- @field private done? boolean
+--- @field is_timeout? boolean
+--- @field error any
 local SingleRows = {}
 
 --- next retrives the next row
@@ -41,9 +43,10 @@ function SingleRows:next(msec)
         return true
     end
 
-    local res, err, timeout = self.res:next(msec)
+    local res
+    res, self.error, self.is_timeout = self.res:next(msec)
     if not res then
-        return false, err, timeout
+        return false, self.error, self.is_timeout
     elseif res:status() ~= 'single_tuple' then
         -- done
         res:clear()
