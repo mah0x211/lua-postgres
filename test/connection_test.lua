@@ -1,15 +1,73 @@
 require('luacov')
+local gpoll = require('gpoll')
+local io_wait_writable = require('io.wait').writable
 local testcase = require('testcase')
 local new_connection = require('postgres.connection').new
+
+function testcase.before_each()
+    gpoll.set_poller()
+end
 
 function testcase.new()
     -- test that create new connection
     local c = assert(new_connection())
     assert.match(c, '^postgres.connection: ', false)
+end
 
-    -- test that create new connection with msec
-    c = assert(new_connection(nil, 1000))
-    assert.match(c, '^postgres.connection: ', false)
+function testcase.new_async()
+    -- test that gpoll.new_writable_event return error
+    gpoll.set_poller({
+        pollable = function()
+            return true
+        end,
+        new_writable_event = function()
+            return nil, 'new writable event error'
+        end,
+    })
+    local c, err, timeout = new_connection(nil, 1000)
+    assert.is_nil(c)
+    assert.match(err, 'new writable event error')
+    assert.is_nil(timeout)
+
+    -- test that gpoll.wait_event return error
+    local targetfd
+    gpoll.set_poller({
+        pollable = function()
+            return true
+        end,
+        new_writable_event = function(fd)
+            targetfd = fd
+            return fd
+        end,
+        wait_event = function(evid, msec)
+            assert.equal(evid, targetfd)
+            assert.equal(msec, 1000)
+            return false, 'wait event error', true
+        end,
+    })
+    c, err, timeout = new_connection(nil, 1000)
+    assert.is_nil(c)
+    assert.match(err, 'wait event error')
+    assert.is_true(timeout)
+
+    -- test that gpoll.new_readable_event return error
+    gpoll.set_poller({
+        pollable = function()
+            return true
+        end,
+        new_readable_event = function()
+            return nil, 'new readable event error'
+        end,
+        new_writable_event = function(fd)
+            return fd
+        end,
+        wait_event = function(fd, msec)
+            return io_wait_writable(fd, msec)
+        end,
+    })
+    c, err = new_connection()
+    assert.is_nil(c)
+    assert.match(err, 'new readable event error')
 end
 
 function testcase.close()

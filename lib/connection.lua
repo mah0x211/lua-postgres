@@ -36,9 +36,10 @@ local io_readable = wait.readable
 local io_writable = wait.writable
 local poll = require('gpoll')
 local pollable = poll.pollable
-local poll_unwait = poll.unwait
-local poll_readable = poll.readable
-local poll_writable = poll.writable
+local new_readable_event = poll.new_readable_event
+local new_writable_event = poll.new_writable_event
+local dispose_event = poll.dispose_event
+local wait_event = poll.wait_event
 
 --- @type fun(conn: postgres.connection, res: postgres.pgresult):postgres.result
 local new_result = require('postgres.result').new
@@ -146,6 +147,8 @@ local pgconn = require('postgres.pgconn')
 --- @class postgres.connection
 --- @field conn postgres.pgconn
 --- @field nonblock boolean
+--- @field readable_evid any
+--- @field writable_evid any
 local Connection = {}
 
 --- init
@@ -164,9 +167,22 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:wait_readable(msec)
-    local wait_readable = pollable() and poll_readable or io_readable
+    local evid = self.readable_evid
+    if not evid then
+        if not pollable() then
+            return io_readable(self.conn:socket(), msec)
+        end
+
+        local err
+        evid, err = new_readable_event(self.conn:socket())
+        if not evid then
+            return false, err
+        end
+        self.readable_evid = evid
+    end
+
     -- wait until readable
-    return wait_readable(self.conn:socket(), msec)
+    return wait_event(evid, msec)
 end
 
 --- wait_writable
@@ -175,15 +191,31 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:wait_writable(msec)
-    local wait_writable = pollable() and poll_writable or io_writable
+    local evid = self.writable_evid
+    if not evid then
+        if not pollable() then
+            return io_writable(self.conn:socket(), msec)
+        end
+
+        local err
+        evid, err = new_writable_event(self.conn:socket())
+        if not evid then
+            return false, err
+        end
+        self.writable_evid = evid
+    end
+
     -- wait until writable
-    return wait_writable(self.conn:socket(), msec)
+    return wait_event(evid, msec)
 end
 
 --- close
 function Connection:close()
-    if self.nonblock then
-        poll_unwait(self.conn:socket())
+    if self.readable_evid then
+        dispose_event(self.readable_evid)
+    end
+    if self.writable_evid then
+        dispose_event(self.writable_evid)
     end
     self.conn:finish()
 end

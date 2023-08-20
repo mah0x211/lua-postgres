@@ -1,6 +1,6 @@
 codefromstrings = false
 runreport = true
-deletestats = false
+deletestats = true
 modules = {
     ["postgres.connection"] = "lib/connection.lua",
     ["postgres.decoder"] = "lib/decoder.lua",
