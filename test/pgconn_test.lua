@@ -210,9 +210,7 @@ function testcase.connection_used_password()
     local c = assert(pgconn())
 
     -- test that is connection used password
-    -- NOTE: the docker postgres image that used in the test environemnt does
-    -- not support the password authentication.
-    assert.is_false(c:connection_used_password())
+    assert.is_true(c:connection_used_password())
 end
 
 function testcase.client_encoding()
