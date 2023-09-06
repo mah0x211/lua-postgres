@@ -17,6 +17,7 @@ dependencies = {
     "isa >= 0.3.0",
     "metamodule >= 0.4.0",
     "postgres-decode >= 0.2.0",
+    "time-clock >= 0.4.0",
     "unpack >= 0.1.0",
     "yyjson >= 0.5.1",
 }
