@@ -3,14 +3,14 @@
 defined in [postgres.connection](../lib/connection.lua) module.
 
 
-## conn, err, timeout = connection.new( [conninfo] [, timeout] )
+## conn, err, timeout = connection.new( [conninfo] [, sec] )
 
 connect to the server.
 
 **Parameters**
 
 - `conninfo:string`: connection string. see [libpq documentation: 34.1.1. Connection Strings](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING) for details. if not specified, [libpq documentation: 34.15. Environment Variables](https://www.postgresql.org/docs/current/libpq-envars.html) is used.
-- `timeout:integer`: timeout in milliseconds.
+- `sec:number`: timeout in seconds.
 
 **Returns**
 
@@ -460,7 +460,7 @@ see [libpq documentation: 34.12. PQencryptPasswordConn](https://www.postgresql.o
     - `"scram-sha-256"`: use the SCRAM-SHA-256 algorithm.
 
 
-## ok, err, timeout = connection:flush( [msec] )
+## ok, err, timeout = connection:flush( [sec] )
 
 attempts to flush any queued output data to the server.
 
@@ -468,7 +468,7 @@ see [libpq documentation: 34.4. PQflush](https://www.postgresql.org/docs/current
 
 **Parameters**
 
-- `msec:number`: the maximum time to wait for the flush to occur, in milliseconds.
+- `sec:number`: the maximum time to wait for the flush to occur in seconds.
 
 **Returns**
 
@@ -533,7 +533,7 @@ print(dump(params))
 ```
 
 
-## res, err, timeout = connection:query( qry [, params [, msec]] )
+## res, err, timeout = connection:query( qry [, params [, sec]] )
 
 executes an SQL query and returns the result.  
 before executing the query, the named parameters in the query are replaced with positional parameters with `connection:replace_named_params()` method.
@@ -542,7 +542,7 @@ before executing the query, the named parameters in the query are replaced with 
 
 - `qry:string`: the SQL query.
 - `params:table`: the parameters.
-- `msec:number`: the maximum time to wait for the query to complete, in milliseconds.
+- `sec:number`: the maximum time to wait for the query to complete in seconds.
 
 **Returns**
 
@@ -551,13 +551,13 @@ before executing the query, the named parameters in the query are replaced with 
 - `timeout:boolean`: `true` if the operation would block.
 
 
-## res, err, timeout = connection:get_result( [msec] )
+## res, err, timeout = connection:get_result( [sec] )
 
 waits for the next result from a prior query call, and returns it. A `nil` is returned when the command is complete and there will be no more results.
 
 **Parameters**
 
-- `msec:number`: the maximum time to wait for the query to complete, in milliseconds.
+- `sec:number`: the maximum time to wait for the query to complete in seconds.
 
 **Returns**
 
