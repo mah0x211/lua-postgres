@@ -5,13 +5,13 @@ defined in [postgres.rows.single](../lib/rows/single.lua) module and inherits [p
 `postgres.rows.single` is a class for retrieving query results row by row.
 
 
-## ok, err, timeout = rows:next( [msec] )
+## ok, err, timeout = rows:next( [sec] )
 
 retrieve the next row and reset the column position to the first column.
 
 **Parameters**
 
-- `msec:integer`: timeout in milliseconds.
+- `sec:number`: timeout in seconds.
 
 **Returns**
 

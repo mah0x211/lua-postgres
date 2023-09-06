@@ -21,7 +21,7 @@
 --
 --- assign to local
 local isa = require('isa')
-local is_uint = isa.uint
+local is_finite = isa.finite
 
 --- @class postgres.rows.single : postgres.rows
 --- @field private done? boolean
@@ -30,12 +30,12 @@ local is_uint = isa.uint
 local SingleRows = {}
 
 --- next retrives the next row
---- @param msec? integer
+--- @param sec? number
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function SingleRows:next(msec)
-    assert(is_uint(msec) or msec == nil, 'msec must be uint or nil')
+function SingleRows:next(sec)
+    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
     if self.done then
         return false
     elseif self.rowi ~= 1 then
@@ -44,7 +44,7 @@ function SingleRows:next(msec)
     end
 
     local res
-    res, self.error, self.is_timeout = self.res:next(msec)
+    res, self.error, self.is_timeout = self.res:next(sec)
     if not res then
         return false, self.error, self.is_timeout
     elseif res:status() ~= 'single_tuple' then

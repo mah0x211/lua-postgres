@@ -30,10 +30,10 @@ local isa = require('isa')
 local is_boolean = isa.boolean
 local is_string = isa.string
 local is_table = isa.table
-local is_uint = isa.uint
+local is_finite = isa.finite
 local wait = require('io.wait')
-local io_readable = wait.readable
-local io_writable = wait.writable
+local io_wait_readable = wait.readable
+local io_wait_writable = wait.writable
 local poll = require('gpoll')
 local pollable = poll.pollable
 local poll_unwait = poll.unwait
@@ -159,25 +159,29 @@ function Connection:init(conn, conninfo)
 end
 
 --- wait_readable
---- @param msec? integer
+--- @param sec? number
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Connection:wait_readable(msec)
-    local wait_readable = pollable() and poll_readable or io_readable
+function Connection:wait_readable(sec)
+    if pollable() then
+        return poll_readable(self.conn:socket(), sec)
+    end
     -- wait until readable
-    return wait_readable(self.conn:socket(), msec)
+    return io_wait_readable(self.conn:socket(), sec)
 end
 
 --- wait_writable
---- @param msec? integer
+--- @param sec? number
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Connection:wait_writable(msec)
-    local wait_writable = pollable() and poll_writable or io_writable
+function Connection:wait_writable(sec)
+    if pollable() then
+        return poll_writable(self.conn:socket(), sec)
+    end
     -- wait until writable
-    return wait_writable(self.conn:socket(), msec)
+    return io_wait_writable(self.conn:socket(), sec)
 end
 
 --- close
@@ -391,11 +395,11 @@ function Connection:encrypt_password_conn(passwd, user, algorithm)
 end
 
 --- flush
---- @param msec? integer
+--- @param sec? number
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Connection:flush(msec)
+function Connection:flush(sec)
     while true do
         local ok, err, again = self.conn:flush()
         if not again then
@@ -403,7 +407,7 @@ function Connection:flush(msec)
         end
 
         local timeout
-        ok, err, timeout = self:wait_writable(msec)
+        ok, err, timeout = self:wait_writable(sec)
         if not ok then
             return false, err, timeout
         end
@@ -516,15 +520,15 @@ end
 --- query
 --- @param query string
 --- @param params? table?
---- @param msec? integer
+--- @param sec? number
 --- @param single_row_mode? boolean
 --- @return postgres.result? res
 --- @return any err
 --- @return boolean? timeout
-function Connection:query(query, params, msec, single_row_mode)
+function Connection:query(query, params, sec, single_row_mode)
     assert(is_string(query), 'query must be string')
     assert(params == nil or is_table(params), 'params must be table or nil')
-    assert(msec == nil or is_uint(msec), 'msec must be uint or nil')
+    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
     assert(single_row_mode == nil or is_boolean(single_row_mode),
            'single_row_mode must be boolean or nil')
     if params == nil then
@@ -548,23 +552,23 @@ function Connection:query(query, params, msec, single_row_mode)
     end
 
     local timeout
-    ok, err, timeout = self:flush(msec)
+    ok, err, timeout = self:flush(sec)
     if not ok then
         return nil, err, timeout
     elseif single_row_mode then
         assert(self.conn:set_single_row_mode(), 'failed to set single row mode')
     end
 
-    return self:get_result(msec)
+    return self:get_result(sec)
 end
 
 --- get_result
---- @param msec? integer
+--- @param sec? number
 --- @return postgres.result? res
 --- @return any err
 --- @return boolean? timeout
-function Connection:get_result(msec)
-    assert(msec == nil or is_uint(msec), 'msec must be uint or nil')
+function Connection:get_result(sec)
+    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
 
     while true do
         local busy, err = self.conn:is_busy()
@@ -580,7 +584,7 @@ function Connection:get_result(msec)
         end
 
         -- wait until readable
-        local ok, werr, timeout = self:wait_readable(msec)
+        local ok, werr, timeout = self:wait_readable(sec)
         if not ok then
             return nil, werr, timeout
         end
@@ -603,17 +607,17 @@ Connection = require('metamodule').new(Connection)
 
 --- connect
 --- @param conninfo? string
---- @param msec? integer
+--- @param sec? number
 --- @return postgres.connection? conn
 --- @return any err
 --- @return boolean? timeout
-local function new(conninfo, msec)
+local function new(conninfo, sec)
     assert(conninfo == nil or is_string(conninfo),
            'conninfo must be string or nil')
-    assert(msec == nil or is_uint(msec), 'msec must be uint or nil')
+    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
 
     local is_pollable = pollable()
-    local is_nonblock = is_pollable or msec ~= nil
+    local is_nonblock = is_pollable or sec ~= nil
     local conn, err = pgconn(conninfo, is_nonblock)
     if err then
         return nil, err
@@ -639,9 +643,9 @@ local function new(conninfo, msec)
         -- polling a status
         local ok, timeout
         if status == 'reading' then
-            ok, err, timeout = c:wait_readable(msec)
+            ok, err, timeout = c:wait_readable(sec)
         elseif status == 'writing' then
-            ok, err, timeout = c:wait_writable(msec)
+            ok, err, timeout = c:wait_writable(sec)
         else
             return nil, format('got unsupported status: %d', status)
         end

@@ -17,13 +17,13 @@ create a new instance of `postgres.result`.
 - `result:postgres.result`: instance of `postgres.result`.
 
 
-## result, err, timeout = result:next( [msec] )
+## result, err, timeout = result:next( [sec] )
 
 fetch the next `postgres.result` in the chain.
 
 **Parameters**
 
-- `msec:number`: timeout in milliseconds.
+- `sec:number`: timeout in seconds.
 
 **Returns**
 
