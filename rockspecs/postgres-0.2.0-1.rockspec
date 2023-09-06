@@ -13,8 +13,8 @@ description = {
 dependencies = {
     "lua >= 5.1",
     "errno >= 0.4.0",
-    "gpoll >= 0.2.0",
-    "io-wait >= 0.1.0",
+    "gpoll ~> 0.6",
+    "io-wait ~> 0.2",
     "isa >= 0.3.0",
     "metamodule >= 0.4.0",
     "postgres-decode >= 0.2.0",
