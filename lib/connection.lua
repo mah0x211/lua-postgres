@@ -40,6 +40,13 @@ local poll_unwait = poll.unwait
 local poll_readable = poll.readable
 local poll_writable = poll.writable
 
+--- @class time.clock.deadline
+--- @field time fun(time.clock.deadline):number
+--- @field remain fun(time.clock.deadline):number
+
+--- @type fun(duration: number):(time.clock.deadline, number)
+local new_deadline = require('time.clock.deadline').new
+
 --- @type fun(conn: postgres.connection, res: postgres.pgresult):postgres.result
 local new_result = require('postgres.result').new
 
@@ -400,10 +407,18 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:flush(sec)
+    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
+
+    local deadline = sec and new_deadline(sec)
     while true do
         local ok, err, again = self.conn:flush()
         if not again then
             return ok, err
+        elseif deadline then
+            sec = deadline:remain()
+            if sec <= 0 then
+                return false, nil, true
+            end
         end
 
         local timeout
@@ -630,6 +645,7 @@ local function new(conninfo, sec)
     end
 
     -- async connect
+    local deadline = sec and new_deadline(sec)
     local c = Connection(conn, conninfo or '')
     while true do
         -- check status
@@ -638,6 +654,12 @@ local function new(conninfo, sec)
             return c
         elseif status == 'failed' then
             return nil, conn:error_message()
+        elseif deadline then
+            sec = deadline:remain()
+            if sec <= 0 then
+                conn:finish()
+                return nil, nil, true
+            end
         end
 
         -- polling a status
