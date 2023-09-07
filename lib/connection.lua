@@ -37,8 +37,8 @@ local io_wait_writable = wait.writable
 local poll = require('gpoll')
 local pollable = poll.pollable
 local poll_unwait = poll.unwait
-local poll_readable = poll.readable
-local poll_writable = poll.writable
+local poll_wait_readable = poll.wait_readable
+local poll_wait_writable = poll.wait_writable
 
 --- @class time.clock.deadline
 --- @field time fun(time.clock.deadline):number
@@ -172,7 +172,7 @@ end
 --- @return boolean? timeout
 function Connection:wait_readable(sec)
     if pollable() then
-        return poll_readable(self.conn:socket(), sec)
+        return poll_wait_readable(self.conn:socket(), sec)
     end
     -- wait until readable
     return io_wait_readable(self.conn:socket(), sec)
@@ -185,7 +185,7 @@ end
 --- @return boolean? timeout
 function Connection:wait_writable(sec)
     if pollable() then
-        return poll_writable(self.conn:socket(), sec)
+        return poll_wait_writable(self.conn:socket(), sec)
     end
     -- wait until writable
     return io_wait_writable(self.conn:socket(), sec)
