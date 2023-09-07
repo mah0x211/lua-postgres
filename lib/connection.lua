@@ -158,10 +158,12 @@ local Connection = {}
 --- init
 --- @param conn postgres.pgconn
 --- @param conninfo string
+--- @param nonblock boolean
 --- @return postgres.connection
-function Connection:init(conn, conninfo)
+function Connection:init(conn, conninfo, nonblock)
     self.conn = conn
     self.conninfo = conninfo
+    self.nonblock = nonblock == true
     return self
 end
 
@@ -646,18 +648,20 @@ local function new(conninfo, sec)
 
     -- async connect
     local deadline = sec and new_deadline(sec)
-    local c = Connection(conn, conninfo or '')
+    local c = Connection(conn, conninfo or '', is_nonblock)
     while true do
         -- check status
         status = conn:connect_poll()
         if status == 'ok' then
             return c
         elseif status == 'failed' then
-            return nil, conn:error_message()
+            err = conn:error_message()
+            c:close()
+            return nil, err
         elseif deadline then
             sec = deadline:remain()
             if sec <= 0 then
-                conn:finish()
+                c:close()
                 return nil, nil, true
             end
         end
@@ -669,12 +673,13 @@ local function new(conninfo, sec)
         elseif status == 'writing' then
             ok, err, timeout = c:wait_writable(sec)
         else
+            c:close()
             return nil, format('got unsupported status: %d', status)
         end
 
         -- got error or timeout
         if not ok then
-            conn:finish()
+            c:close()
             return nil, err, timeout
         end
     end
