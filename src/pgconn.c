@@ -476,10 +476,33 @@ static int is_busy_lua(lua_State *L)
 {
     PGconn *conn = pgconn_check(L);
 
+RETRY:
     errno = 0;
     if (PQconsumeInput(conn)) {
-        lua_pushboolean(L, PQisBusy(conn));
+        /**
+         * NOTE: In the manual, you should call PQisBusy after PQconsumeInput
+         * for asynchronous mode. But, this combination does not work well on
+         * the edge-triggered mode.
+         *
+         * This combination will result in a busy status even if the errno is
+         * not set to EAGAIN or EWOULDBLOCK on a socket read error. Thus, even
+         * if the socket is monitored with epoll or kqueue, no event will be
+         * fired.
+         */
+        int call_again = errno == EAGAIN || errno == EWOULDBLOCK;
+        if (!PQisBusy(conn)) {
+            // it can read result
+            lua_pushboolean(L, 0);
+        } else if (call_again) {
+            // it should call PQconsumeInput again after polling the socket
+            lua_pushboolean(L, 1);
+        } else {
+            // it should call PQconsumeInput again while errno is set to EAGAIN
+            // or EWOULDBLOCK
+            goto RETRY;
+        }
         return 1;
+
     } else if (errno == 0) {
         errno = ECANCELED;
     }
