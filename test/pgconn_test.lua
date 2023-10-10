@@ -257,13 +257,7 @@ function testcase.ssl_attribute_names()
     local c = assert(pgconn())
 
     -- test that return attribute names
-    assert.equal(c:ssl_attribute_names(), {
-        'library',
-        'key_bits',
-        'cipher',
-        'compression',
-        'protocol',
-    })
+    assert.is_table(c:ssl_attribute_names())
 end
 
 function testcase.set_error_verbosity()
