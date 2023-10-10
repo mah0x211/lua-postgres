@@ -153,6 +153,7 @@ local pgconn = require('postgres.pgconn')
 --- @class postgres.connection
 --- @field conn postgres.pgconn
 --- @field nonblock boolean
+--- @field private fd integer
 local Connection = {}
 
 --- init
@@ -164,6 +165,7 @@ function Connection:init(conn, conninfo, nonblock)
     self.conn = conn
     self.conninfo = conninfo
     self.nonblock = nonblock == true
+    self.fd = conn:socket()
     return self
 end
 
@@ -174,10 +176,10 @@ end
 --- @return boolean? timeout
 function Connection:wait_readable(sec)
     if pollable() then
-        return poll_wait_readable(self.conn:socket(), sec)
+        return poll_wait_readable(self.fd, sec)
     end
     -- wait until readable
-    return io_wait_readable(self.conn:socket(), sec)
+    return io_wait_readable(self.fd, sec)
 end
 
 --- wait_writable
@@ -187,17 +189,18 @@ end
 --- @return boolean? timeout
 function Connection:wait_writable(sec)
     if pollable() then
-        return poll_wait_writable(self.conn:socket(), sec)
+        return poll_wait_writable(self.fd, sec)
     end
     -- wait until writable
-    return io_wait_writable(self.conn:socket(), sec)
+    return io_wait_writable(self.fd, sec)
 end
 
 --- close
 function Connection:close()
     if self.nonblock then
-        poll_unwait(self.conn:socket())
+        poll_unwait(self.fd)
     end
+    self.fd = nil
     self.conn:finish()
 end
 
