@@ -31,11 +31,7 @@ local is_boolean = isa.boolean
 local is_string = isa.string
 local is_table = isa.table
 local is_finite = isa.finite
-local wait = require('io.wait')
-local io_wait_readable = wait.readable
-local io_wait_writable = wait.writable
 local poll = require('gpoll')
-local pollable = poll.pollable
 local poll_unwait = poll.unwait
 local poll_wait_readable = poll.wait_readable
 local poll_wait_writable = poll.wait_writable
@@ -152,19 +148,16 @@ local pgconn = require('postgres.pgconn')
 
 --- @class postgres.connection
 --- @field conn postgres.pgconn
---- @field nonblock boolean
 --- @field private fd integer
 local Connection = {}
 
 --- init
 --- @param conn postgres.pgconn
 --- @param conninfo string
---- @param nonblock boolean
 --- @return postgres.connection
-function Connection:init(conn, conninfo, nonblock)
+function Connection:init(conn, conninfo)
     self.conn = conn
     self.conninfo = conninfo
-    self.nonblock = nonblock == true
     self.fd = conn:socket()
     return self
 end
@@ -175,11 +168,8 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:wait_readable(sec)
-    if pollable() then
-        return poll_wait_readable(self.fd, sec)
-    end
     -- wait until readable
-    return io_wait_readable(self.fd, sec)
+    return poll_wait_readable(self.fd, sec)
 end
 
 --- wait_writable
@@ -188,20 +178,16 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:wait_writable(sec)
-    if pollable() then
-        return poll_wait_writable(self.fd, sec)
-    end
-    -- wait until writable
-    return io_wait_writable(self.fd, sec)
+    return poll_wait_writable(self.fd, sec)
 end
 
 --- close
 function Connection:close()
-    if self.nonblock then
+    if self.fd then
         poll_unwait(self.fd)
+        self.fd = nil
+        self.conn:finish()
     end
-    self.fd = nil
-    self.conn:finish()
 end
 
 --- get_cancel
@@ -636,9 +622,7 @@ local function new(conninfo, sec)
            'conninfo must be string or nil')
     assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
 
-    local is_pollable = pollable()
-    local is_nonblock = is_pollable or sec ~= nil
-    local conn, err = pgconn(conninfo, is_nonblock)
+    local conn, err = pgconn(conninfo, true)
     if err then
         return nil, err
     end
@@ -651,7 +635,7 @@ local function new(conninfo, sec)
 
     -- async connect
     local deadline = sec and new_deadline(sec)
-    local c = Connection(conn, conninfo or '', is_nonblock)
+    local c = Connection(conn, conninfo or '')
     while true do
         -- check status
         status = conn:connect_poll()
