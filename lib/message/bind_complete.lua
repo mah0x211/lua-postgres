@@ -22,47 +22,40 @@
 --- assign to local
 local sub = string.sub
 local errorf = require('error').format
+local ntohl = require('postgres.ntohl')
 
---- @class postgres.message
---- @field consumed integer?
---- @field conn postgres.connection?
---- @field type string
-local Message = {}
+--- @class postgres.message.bind_complete : postgres.message
+local BindComplete = require('metamodule').new({}, 'postgres.message')
 
---- next retrieves the next message from the connection.
---- @return postgres.message? msg
---- @return any err
---- @return boolean? timeout
-function Message:next()
-    if not self.conn then
-        return nil
-    end
-    return self.conn:next()
-end
-
-require('metamodule').new(Message)
-
-local DECODER = {
-    R = require('postgres.message.authentication').decode,
-    K = require('postgres.message.backend_key_data').decode,
-    ['2'] = require('postgres.message.bind_complete').decode,
-}
-
---- decode_message
+--- decode
 --- @param s string
 --- @return table? msg
 --- @return any err
 --- @return boolean? again
 local function decode(s)
-    if #s < 1 then
+    --
+    -- BindComplete (B)
+    --   Byte1('2')
+    --     Identifies the message as a Bind-complete indicator.
+    --
+    --   Int32(4)
+    --     Length of message contents in bytes, including self.
+    --
+    if #s < 5 then
         return nil, nil, true
+    elseif sub(s, 1, 1) ~= '2' then
+        return nil, errorf('invalid BindComplete message')
     end
 
-    local decoder = DECODER[sub(s, 1, 1)]
-    if not decoder then
-        return nil, errorf('unknown message type')
+    local len = ntohl(sub(s, 2))
+    if len ~= 4 then
+        return nil, errorf('invalid BindComplete message')
     end
-    return decoder(s)
+
+    local msg = BindComplete()
+    msg.consumed = len + 1
+    msg.type = 'BindComplete'
+    return msg
 end
 
 return {
