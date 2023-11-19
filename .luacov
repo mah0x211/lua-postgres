@@ -15,6 +15,7 @@ modules = {
     ["postgres.message.error_response"] = "lib/message/error_response.lua",
     ["postgres.message.negotiation_protocol_version"] = "lib/message/negotiation_protocol_version.lua",
     ["postgres.message.no_data"] = "lib/message/no_data.lua",
+    ["postgres.message.parameter_status"] = "lib/message/parameter_status.lua",
     ["postgres.pool"] = "lib/pool.lua",
     ["postgres.result"] = "lib/result.lua",
     ["postgres.rows"] = "lib/rows.lua",

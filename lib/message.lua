@@ -53,6 +53,7 @@ local DECODER = {
     N = require('postgres.message.error_response'), -- NoticeResponse.decodee
     v = require('postgres.message.negotiation_protocol_version').decode,
     n = require('postgres.message.no_data').decode,
+    S = require('postgres.message.parameter_status').decode,
 }
 
 --- decode_message
