@@ -12,6 +12,7 @@ modules = {
     ["postgres.message.close_complete"] = "lib/message/close_complete.lua",
     ["postgres.message.command_complete"] = "lib/message/command_complete.lua",
     ["postgres.message.data_row"] = "lib/message/data_row.lua",
+    ["postgres.message.error_response"] = "lib/message/error_response.lua",
     ["postgres.pool"] = "lib/pool.lua",
     ["postgres.result"] = "lib/result.lua",
     ["postgres.rows"] = "lib/rows.lua",
