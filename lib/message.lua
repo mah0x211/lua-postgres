@@ -48,6 +48,7 @@ local DECODER = {
     ['2'] = require('postgres.message.bind_complete').decode,
     ['3'] = require('postgres.message.close_complete').decode,
     C = require('postgres.message.command_complete').decode,
+    D = require('postgres.message.data_row').decode,
 }
 
 --- decode_message
