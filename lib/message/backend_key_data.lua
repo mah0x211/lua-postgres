@@ -22,46 +22,55 @@
 --- assign to local
 local sub = string.sub
 local errorf = require('error').format
+local ntohl = require('postgres.ntohl')
 
---- @class postgres.message
---- @field consumed integer?
---- @field conn postgres.connection?
---- @field type string
-local Message = {}
+--- @class postgres.message.backend_key_data : postgres.message
+--- @field pid integer
+--- @field key integer
+local BackendKeyData = require('metamodule').new({}, 'postgres.message')
 
---- next retrieves the next message from the connection.
---- @return postgres.message? msg
---- @return any err
---- @return boolean? timeout
-function Message:next()
-    if not self.conn then
-        return nil
-    end
-    return self.conn:next()
-end
-
-require('metamodule').new(Message)
-
-local DECODER = {
-    R = require('postgres.message.authentication').decode,
-    K = require('postgres.message.backend_key_data').decode,
-}
-
---- decode_message
+--- decode
 --- @param s string
 --- @return table? msg
 --- @return any err
 --- @return boolean? again
 local function decode(s)
-    if #s < 1 then
+    --
+    -- BackendKeyData (B)
+    --   Byte1('K')
+    --     Identifies the message as cancellation key data. The frontend must
+    --     save these values if it wishes to be able to issue CancelRequest
+    --     messages later.
+    --
+    --   Int32(12)
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32
+    --     The process ID of this backend.
+    --
+    --   Int32
+    --     The secret key of this backend.
+    --
+    if #s < 5 then
+        return nil, nil, true
+    elseif sub(s, 1, 1) ~= 'K' then
+        return nil, errorf('invalid BackendKeyData message')
+    end
+
+    local len = ntohl(sub(s, 2))
+    local consumed = len + 1
+    if len ~= 12 then
+        return nil, errorf('invalid BackendKeyData message')
+    elseif #s < consumed then
         return nil, nil, true
     end
 
-    local decoder = DECODER[sub(s, 1, 1)]
-    if not decoder then
-        return nil, errorf('unknown message type')
-    end
-    return decoder(s)
+    local msg = BackendKeyData()
+    msg.consumed = consumed
+    msg.type = 'BackendKeyData'
+    msg.pid = ntohl(sub(s, 6))
+    msg.key = ntohl(sub(s, 10))
+    return msg
 end
 
 return {

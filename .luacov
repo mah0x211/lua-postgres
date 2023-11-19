@@ -7,6 +7,7 @@ modules = {
     ["postgres.decoder"] = "lib/decoder.lua",
     ["postgres.message"] = "lib/message.lua",
     ["postgres.message.authentication"] = "lib/message/authentication.lua",
+    ["postgres.message.backend_key_data"] = "lib/message/backend_key_data.lua",
     ["postgres.pool"] = "lib/pool.lua",
     ["postgres.result"] = "lib/result.lua",
     ["postgres.rows"] = "lib/rows.lua",
