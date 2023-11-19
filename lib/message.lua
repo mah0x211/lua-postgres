@@ -55,6 +55,7 @@ local DECODER = {
     n = require('postgres.message.no_data').decode,
     S = require('postgres.message.parameter_status').decode,
     ['1'] = require('postgres.message.parse_complete').decode,
+    Z = require('postgres.message.ready_for_query').decode,
 }
 
 --- decode_message
