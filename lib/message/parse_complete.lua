@@ -22,56 +22,40 @@
 --- assign to local
 local sub = string.sub
 local errorf = require('error').format
+local ntohl = require('postgres.ntohl')
 
---- @class postgres.message
---- @field consumed integer?
---- @field conn postgres.connection?
---- @field type string
-local Message = {}
+--- @class postgres.message.parse_complete : postgres.message
+local ParseComplete = require('metamodule').new({}, 'postgres.message')
 
---- next retrieves the next message from the connection.
---- @return postgres.message? msg
---- @return any err
---- @return boolean? timeout
-function Message:next()
-    if not self.conn then
-        return nil
-    end
-    return self.conn:next()
-end
-
-require('metamodule').new(Message)
-
-local DECODER = {
-    R = require('postgres.message.authentication').decode,
-    K = require('postgres.message.backend_key_data').decode,
-    ['2'] = require('postgres.message.bind_complete').decode,
-    ['3'] = require('postgres.message.close_complete').decode,
-    C = require('postgres.message.command_complete').decode,
-    D = require('postgres.message.data_row').decode,
-    E = require('postgres.message.error_response').decode,
-    N = require('postgres.message.error_response'), -- NoticeResponse.decodee
-    v = require('postgres.message.negotiation_protocol_version').decode,
-    n = require('postgres.message.no_data').decode,
-    S = require('postgres.message.parameter_status').decode,
-    ['1'] = require('postgres.message.parse_complete').decode,
-}
-
---- decode_message
+--- decode
 --- @param s string
 --- @return table? msg
 --- @return any err
 --- @return boolean? again
 local function decode(s)
-    if #s < 1 then
+    --
+    -- ParseComplete (B)
+    --   Byte1('1')
+    --     Identifies the message as a Parse-complete indicator.
+    --
+    --   Int32(4)
+    --     Length of message contents in bytes, including self.
+    --
+    if #s < 5 then
         return nil, nil, true
+    elseif sub(s, 1, 1) ~= '1' then
+        return nil, errorf('invalid ParseComplete message')
     end
 
-    local decoder = DECODER[sub(s, 1, 1)]
-    if not decoder then
-        return nil, errorf('unknown message type')
+    local len = ntohl(sub(s, 2))
+    if len ~= 4 then
+        return nil, errorf('invalid ParseComplete message')
     end
-    return decoder(s)
+
+    local msg = ParseComplete()
+    msg.consumed = len + 1
+    msg.type = 'ParseComplete'
+    return msg
 end
 
 return {
