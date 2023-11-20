@@ -28,6 +28,7 @@ modules = {
     ["postgres.message.query"] = "lib/message/query.lua",
     ["postgres.message.ready_for_query"] = "lib/message/ready_for_query.lua",
     ["postgres.message.row_description"] = "lib/message/row_description.lua",
+    ["postgres.message.startup_message"] = "lib/message/startup_message.lua",
     ["postgres.pool"] = "lib/pool.lua",
     ["postgres.result"] = "lib/result.lua",
     ["postgres.rows"] = "lib/rows.lua",

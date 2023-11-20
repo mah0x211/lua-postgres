@@ -87,6 +87,7 @@ return {
         parse = require('postgres.message.parse').encode,
         password_message = require('postgres.message.password_message').encode,
         query = require('postgres.message.query').encode,
+        startup_message = require('postgres.message.startup_message').encode,
     },
     decode = decode,
 }
