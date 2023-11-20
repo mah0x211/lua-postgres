@@ -311,16 +311,6 @@ function Connection:set_trace_flags(...)
     self.conn:set_trace_flags(...)
 end
 
---- encrypt_password_conn
---- @param passwd string
---- @param user string
---- @param algorithm string
---- @return string? str
---- @return any err
-function Connection:encrypt_password_conn(passwd, user, algorithm)
-    return self.conn:encrypt_password_conn(passwd, user, algorithm)
-end
-
 --- flush
 --- @param sec? number
 --- @return boolean ok

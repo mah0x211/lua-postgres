@@ -308,21 +308,6 @@ see [libpq documentation: 34.11. PQsetTraceFlags](https://www.postgresql.org/doc
     - `"regress_mode"`: redact portions of some messages, for testing frameworks.
 
 
-## str, err = connection:encrypt_password_conn( password, user, algorithm )
-
-encrypt a password for use with the authentication system.
-
-see [libpq documentation: 34.12. PQencryptPasswordConn](https://www.postgresql.org/docs/current/libpq-misc.html#LIBPQ-PQENCRYPTPASSWORDCONN) for details.
-
-**Parameters**
-
-- `password:string`: the password to encrypt.
-- `user:string`: the user name.
-- `algorithm:string`: the encryption algorithm to use. the following values are possible:
-    - `"md5"`: use the MD5 algorithm. (default)
-    - `"scram-sha-256"`: use the SCRAM-SHA-256 algorithm.
-
-
 ## ok, err, timeout = connection:flush( [sec] )
 
 attempts to flush any queued output data to the server.
