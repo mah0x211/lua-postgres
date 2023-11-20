@@ -3,6 +3,7 @@ runreport = true
 deletestats = true
 modules = {
     ["postgres.connection"] = "lib/connection.lua",
+    ["postgres.conninfo"] = "lib/conninfo.lua",
     ["postgres.decoder"] = "lib/decoder.lua",
     ["postgres.pool"] = "lib/pool.lua",
     ["postgres.result"] = "lib/result.lua",
