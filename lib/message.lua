@@ -77,5 +77,8 @@ local function decode(s)
 end
 
 return {
+    encode = {
+        bind = require('postgres.message.bind').encode,
+    },
     decode = decode,
 }
