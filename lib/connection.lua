@@ -279,12 +279,6 @@ function Connection:set_error_context_visibility(visibility)
     return self.conn:set_error_context_visibility(visibility)
 end
 
---- set_notice_processor
---- @param fn function
-function Connection:set_notice_processor(fn)
-    self.conn:set_notice_processor(fn)
-end
-
 --- set_notice_receiver
 --- @param fn function
 function Connection:set_notice_receiver(fn)

@@ -244,18 +244,6 @@ see [libpq documentation: 34.12. PQsetErrorContextVisibility](https://www.postgr
     - `"unknown PGContextVisibility"`: unknown visibility mode. (should not happen)
 
 
-## connection:set_notice_processor( callback )
-
-set the notice processor callback.
-
-see [libpq documentation: 34.13. Notice Processing](https://www.postgresql.org/docs/current/libpq-notice-processing.html) for details.
-
-**Parameters**
-
-- `callback:function( message:string )`: The callback function that called for each notice message with the following arguments:
-        - `message:string`: the notice message.
-
-
 ## connection:set_notice_receiver( callback )
 
 set the notice receiver callback.
