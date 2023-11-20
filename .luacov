@@ -10,6 +10,7 @@ modules = {
     ["postgres.message.backend_key_data"] = "lib/message/backend_key_data.lua",
     ["postgres.message.bind_complete"] = "lib/message/bind_complete.lua",
     ["postgres.message.bind"] = "lib/message/bind.lua",
+    ["postgres.message.cancel_request"] = "lib/message/cancel_request.lua",
     ["postgres.message.close_complete"] = "lib/message/close_complete.lua",
     ["postgres.message.close_portal"] = "lib/message/close_portal.lua",
     ["postgres.message.close_statement"] = "lib/message/close_statement.lua",

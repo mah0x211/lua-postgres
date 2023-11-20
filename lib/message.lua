@@ -79,6 +79,7 @@ end
 return {
     encode = {
         bind = require('postgres.message.bind').encode,
+        cancel_request = require('postgres.message.cancel_request').encode,
         close_portal = require('postgres.message.close_portal').encode,
         close_statement = require('postgres.message.close_statement').encode,
         describe_portal = require('postgres.message.describe_portal').encode,
