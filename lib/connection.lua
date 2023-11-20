@@ -516,18 +516,6 @@ function Connection:get_result(sec)
     end
 end
 
---- make_empty_result
---- @param status string
---- @return postgres.result? res
---- @return any err
-function Connection:make_empty_result(status)
-    local res, err = self.conn:make_empty_result(status)
-    if not res then
-        return nil, err
-    end
-    return new_result(self, res)
-end
-
 Connection = require('metamodule').new(Connection)
 
 --- connect
