@@ -89,6 +89,7 @@ return {
         describe_portal = require('postgres.message.describe_portal').encode,
         describe_statement = require('postgres.message.describe_statement').encode,
         execute = require('postgres.message.execute').encode,
+        flush = require('postgres.message.flush').encode,
         parse = require('postgres.message.parse').encode,
         password_message = require('postgres.message.password_message').encode,
         query = require('postgres.message.query').encode,
