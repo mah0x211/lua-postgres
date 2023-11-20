@@ -246,14 +246,6 @@ function Connection:client_encoding()
     return self.conn:client_encoding()
 end
 
---- set_client_encoding
---- @param encoding string
---- @return boolean ok
---- @return any err
-function Connection:set_client_encoding(encoding)
-    return self.conn:set_client_encoding(encoding)
-end
-
 --- ssl_in_use
 --- @return boolean ok
 function Connection:ssl_in_use()

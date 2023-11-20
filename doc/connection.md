@@ -157,17 +157,6 @@ see [libpq documentation: 34.11. PQclientEncoding](https://www.postgresql.org/do
 - `encoding:string`: the encoding name.
 
 
-## ok, err = connection:set_client_encoding( encoding )
-
-set the client encoding.
-
-see [libpq documentation: 34.11. PQsetClientEncoding](https://www.postgresql.org/docs/current/libpq-control.html#LIBPQ-PQSETCLIENTENCODING) for details.
-
-**Parameters**
-
-- `encoding:string`: the encoding name.
-
-
 ## ok = connection:ssl_in_use()
 
 check whether the connection is using SSL.
