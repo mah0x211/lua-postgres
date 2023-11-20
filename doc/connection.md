@@ -141,19 +141,6 @@ see [libpq documentation: 34.13. Notice Processing](https://www.postgresql.org/d
         - `result:postgres.pgresult`: the `postgres.pgresult` object.
 
 
-## ok = connection:call_notice_receiver( result )
-
-call the notice receiver callback.
-
-**Parameters**
-
-- `result:postgres.pgresult`: the `postgres.pgresult` object.
-
-**Returns**
-
-- `ok:boolean`: `true` if the notice receiver callback was called.
-
-
 ## old = connection:trace( new )
 
 enables tracing of the client/server communication to a debugging file stream.

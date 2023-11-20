@@ -240,13 +240,6 @@ function Connection:set_notice_receiver(fn)
     self.conn:set_notice_receiver(fn)
 end
 
---- call_notice_receiver
---- @param res postgres.result
---- @return boolean ok
-function Connection:call_notice_receiver(res)
-    return self.conn:call_notice_receiver(res.res)
-end
-
 --- trace
 --- @param f file*
 --- @return file* f
