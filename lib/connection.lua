@@ -311,14 +311,6 @@ function Connection:set_trace_flags(...)
     self.conn:set_trace_flags(...)
 end
 
---- escape_identifier
---- @param str string
---- @return string? str
---- @return any err
-function Connection:escape_identifier(str)
-    return self.conn:escape_identifier(str)
-end
-
 --- escape_bytea_conn
 --- @param str string
 --- @return string? str

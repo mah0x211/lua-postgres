@@ -308,22 +308,6 @@ see [libpq documentation: 34.11. PQsetTraceFlags](https://www.postgresql.org/doc
     - `"regress_mode"`: redact portions of some messages, for testing frameworks.
 
 
-## str, err = connection:escape_identifier( str )
-
-escape a string for use as an SQL identifier, such as a table, column, or function name.
-
-see [libpq documentation: 34.3. PQescapeIdentifier](https://www.postgresql.org/docs/current/libpq-exec.html#LIBPQ-PQESCAPEIDENTIFIER) for details.
-
-**Parameters**
-
-- `str:string`: the string to escape.
-
-**Returns**
-
-- `str:string`: the escaped string.
-- `err:any`: the error object.
-
-
 ## data, err = connection:escape_bytea_conn( data )
 
 escape a binary data for use within an SQL command with the type `bytea`.
