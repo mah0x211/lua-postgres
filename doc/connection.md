@@ -146,17 +146,6 @@ see [libpq documentation: 33.20. PQbackendPID](https://www.postgresql.org/docs/c
 - `pid:integer`: backend PID.
 
 
-## ok = connection:needs_password()
-
-check whether the connection needs a password.
-
-see [libpq documentation: 33.22. PQconnectionNeedsPassword](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQCONNECTIONNEEDSPASSWORD) for details.
-
-**Returns**
-
-- `ok:boolean`: `true` if the connection needs a password.
-
-
 ## encoding = connection:client_encoding()
 
 get the client encoding.

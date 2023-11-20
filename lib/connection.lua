@@ -240,12 +240,6 @@ function Connection:backend_pid()
     return self.conn:backend_pid()
 end
 
---- connection_needs_password
---- @return boolean ok
-function Connection:connection_needs_password()
-    return self.conn:connection_needs_password()
-end
-
 --- client_encoding
 --- @return string encoding
 function Connection:client_encoding()
