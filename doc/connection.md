@@ -157,17 +157,6 @@ see [libpq documentation: 34.11. PQclientEncoding](https://www.postgresql.org/do
 - `encoding:string`: the encoding name.
 
 
-## names = connection:ssl_attribute_names()
-
-get the SSL attribute names.
-
-see [libpq documentation: 34.2. PQsslAttributeNames](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQSSLATTRIBUTENAMES) for details.
-
-**Returns**
-
-- `names:string[]`: the attribute names.
-
-
 ## connection:set_notice_receiver( callback )
 
 set the notice receiver callback.

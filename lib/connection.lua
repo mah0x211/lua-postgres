@@ -246,12 +246,6 @@ function Connection:client_encoding()
     return self.conn:client_encoding()
 end
 
---- ssl_attribute_names
---- @return string[] attr_names
-function Connection:ssl_attribute_names()
-    return self.conn:ssl_attribute_names()
-end
-
 --- set_notice_receiver
 --- @param fn function
 function Connection:set_notice_receiver(fn)
