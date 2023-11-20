@@ -240,12 +240,6 @@ function Connection:backend_pid()
     return self.conn:backend_pid()
 end
 
---- pipeline_status
---- @return string status
-function Connection:pipeline_status()
-    return self.conn:pipeline_status()
-end
-
 --- connection_needs_password
 --- @return boolean ok
 function Connection:connection_needs_password()

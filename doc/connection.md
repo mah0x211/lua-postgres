@@ -146,21 +146,6 @@ see [libpq documentation: 33.20. PQbackendPID](https://www.postgresql.org/docs/c
 - `pid:integer`: backend PID.
 
 
-## status = connection:pipeline_status()
-
-get the status of the last pipeline operation.
-
-see [libpq documentation: 33.21. PQpipelineStatus](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQPIPELINESTATUS) for details.
-
-**Returns**
-
-- `status:string`: the following values are possible:
-    - `"off"`: connection is not in pipeline mode.
-    - `"on"`: connection is in pipeline mode.
-    - `"aborted"`: connection is in pipeline mode and an error occurred while processing the pipeline. The aborted flag is cleared when the PQgetResult returns a result of type PGRES_PIPELINE_SYNC.
-    - `"unknown PGpipelineStatus"`: unknown status type. (should not happen)
-
-
 ## ok = connection:needs_password()
 
 check whether the connection needs a password.
