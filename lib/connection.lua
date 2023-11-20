@@ -311,14 +311,6 @@ function Connection:set_trace_flags(...)
     self.conn:set_trace_flags(...)
 end
 
---- escape_bytea_conn
---- @param str string
---- @return string? str
---- @return any err
-function Connection:escape_bytea_conn(str)
-    return self.conn:escape_bytea_conn(str)
-end
-
 --- encrypt_password_conn
 --- @param passwd string
 --- @param user string

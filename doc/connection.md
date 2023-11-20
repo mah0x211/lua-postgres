@@ -308,22 +308,6 @@ see [libpq documentation: 34.11. PQsetTraceFlags](https://www.postgresql.org/doc
     - `"regress_mode"`: redact portions of some messages, for testing frameworks.
 
 
-## data, err = connection:escape_bytea_conn( data )
-
-escape a binary data for use within an SQL command with the type `bytea`.
-
-see [libpq documentation: 34.3. PQescapeByteaConn](https://www.postgresql.org/docs/current/libpq-exec.html#LIBPQ-PQESCAPEBYTEACONN) for details.
-
-**Parameters**
-
-- `data:string`: the binary data to escape.
-
-**Returns**
-
-- `data:string`: the escaped binary data.
-- `err:any`: the error object.
-
-
 ## str, err = connection:encrypt_password_conn( password, user, algorithm )
 
 encrypt a password for use with the authentication system.
