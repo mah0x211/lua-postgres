@@ -25,6 +25,7 @@ modules = {
     ["postgres.message.parse_complete"] = "lib/message/parse_complete.lua",
     ["postgres.message.parse"] = "lib/message/parse.lua",
     ["postgres.message.password_message"] = "lib/message/password_message.lua",
+    ["postgres.message.query"] = "lib/message/query.lua",
     ["postgres.message.ready_for_query"] = "lib/message/ready_for_query.lua",
     ["postgres.message.row_description"] = "lib/message/row_description.lua",
     ["postgres.pool"] = "lib/pool.lua",
