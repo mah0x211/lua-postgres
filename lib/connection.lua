@@ -246,12 +246,6 @@ function Connection:client_encoding()
     return self.conn:client_encoding()
 end
 
---- ssl_in_use
---- @return boolean ok
-function Connection:ssl_in_use()
-    return self.conn:ssl_in_use()
-end
-
 --- ssl_attribute
 --- @param attr_name string
 --- @return string attr

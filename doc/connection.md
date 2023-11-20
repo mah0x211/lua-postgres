@@ -157,17 +157,6 @@ see [libpq documentation: 34.11. PQclientEncoding](https://www.postgresql.org/do
 - `encoding:string`: the encoding name.
 
 
-## ok = connection:ssl_in_use()
-
-check whether the connection is using SSL.
-
-see [libpq documentation: 34.2. PQsslInUse](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQSSLINUSE) for details.
-
-**Returns**
-
-- `ok:boolean`: `true` if the connection is using SSL.
-
-
 ## attr = connection:ssl_attribute( name )
 
 get the SSL attribute.
