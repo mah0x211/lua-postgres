@@ -194,29 +194,6 @@ see [libpq documentation: 34.2. PQsslAttributeNames](https://www.postgresql.org/
 - `names:string[]`: the attribute names.
 
 
-## old = connection:set_error_context_visibility( new )
-
-sets the context display mode, returning the previous mode.
-
-see [libpq documentation: 34.12. PQsetErrorContextVisibility](https://www.postgresql.org/docs/current/libpq-control.html#LIBPQ-PQSETERRORCONTEXTVISIBILITY) for details.
-
-**Parameters**
-
-- `new:string`: the following values are possible:
-    - `"never"`: never show CONTEXT field.
-    - `"errors"`: show CONTEXT for errors only. (default)
-    - `"always"`: always show CONTEXT field.
-    - `"unknown PGContextVisibility"`: unknown visibility mode. (should not happen)
-
-**Returns**
-
-- `old:string`: the following values are possible:
-    - `"never"`: never show CONTEXT field.
-    - `"errors"`: show CONTEXT for errors only.
-    - `"always"`: always show CONTEXT field.
-    - `"unknown PGContextVisibility"`: unknown visibility mode. (should not happen)
-
-
 ## connection:set_notice_receiver( callback )
 
 set the notice receiver callback.

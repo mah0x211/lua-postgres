@@ -265,13 +265,6 @@ function Connection:ssl_attribute_names()
     return self.conn:ssl_attribute_names()
 end
 
---- set_error_context_visibility
---- @param visibility string
---- @return string visibility
-function Connection:set_error_context_visibility(visibility)
-    return self.conn:set_error_context_visibility(visibility)
-end
-
 --- set_notice_receiver
 --- @param fn function
 function Connection:set_notice_receiver(fn)
