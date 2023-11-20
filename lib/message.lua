@@ -89,6 +89,7 @@ return {
         query = require('postgres.message.query').encode,
         startup_message = require('postgres.message.startup_message').encode,
         sync = require('postgres.message.sync').encode,
+        terminate = require('postgres.message.terminate').encode,
     },
     decode = decode,
 }
