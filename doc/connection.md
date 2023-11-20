@@ -194,33 +194,6 @@ see [libpq documentation: 34.2. PQsslAttributeNames](https://www.postgresql.org/
 - `names:string[]`: the attribute names.
 
 
-## old = connection:set_error_verbosity( [new] )
-
-sets the verbosity mode, returning the previous mode.
-
-see [libpq documentation: 34.11. PQsetErrorVerbosity](https://www.postgresql.org/docs/current/libpq-control.html#LIBPQ-PQSETERRORVERBOSITY) for details.
-
-**Parameters**
-
-- `new:string`: the following values are possible:
-    - `"terse"`: single-line error messages.
-    - `"default"`: recommended style. (default)
-    - `"verbose"`: all the facts, ma'am.
-    - `"sqlstate"`: only error severity and SQLSTATE code.
-    - `"unknown PGVerbosity"`: unknown verbosity mode. (should not happen)
-
-
-
-**Returns**
-
-- `old:string`: the following values are possible:
-    - `"terse"`: single-line error messages.
-    - `"default"`: recommended style.
-    - `"verbose"`: all the facts, ma'am.
-    - `"sqlstate"`: only error severity and SQLSTATE code.
-    - `"unknown PGVerbosity"`: unknown verbosity mode. (should not happen)
-
-
 ## old = connection:set_error_context_visibility( new )
 
 sets the context display mode, returning the previous mode.

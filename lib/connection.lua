@@ -265,13 +265,6 @@ function Connection:ssl_attribute_names()
     return self.conn:ssl_attribute_names()
 end
 
---- set_error_verbosity
---- @param verbosity string
---- @return string verbosity
-function Connection:set_error_verbosity(verbosity)
-    return self.conn:set_error_verbosity(verbosity)
-end
-
 --- set_error_context_visibility
 --- @param visibility string
 --- @return string visibility
