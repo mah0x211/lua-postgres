@@ -157,17 +157,6 @@ see [libpq documentation: 33.22. PQconnectionNeedsPassword](https://www.postgres
 - `ok:boolean`: `true` if the connection needs a password.
 
 
-## ok = connection:used_password()
-
-check whether the connection used a password.
-
-see [libpq documentation: 33.23. PQconnectionUsedPassword](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQCONNECTIONUSEDPASSWORD) for details.
-
-**Returns**
-
-- `ok:boolean`: `true` if the connection used a password.
-
-
 ## encoding = connection:client_encoding()
 
 get the client encoding.

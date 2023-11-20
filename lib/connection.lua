@@ -246,12 +246,6 @@ function Connection:connection_needs_password()
     return self.conn:connection_needs_password()
 end
 
---- connection_used_password
---- @return boolean ok
-function Connection:connection_used_password()
-    return self.conn:connection_used_password()
-end
-
 --- client_encoding
 --- @return string encoding
 function Connection:client_encoding()
