@@ -308,22 +308,6 @@ see [libpq documentation: 34.11. PQsetTraceFlags](https://www.postgresql.org/doc
     - `"regress_mode"`: redact portions of some messages, for testing frameworks.
 
 
-## str, err = connection:escape_literal( str )
-
-escape a string for use within an SQL command string.
-
-see [libpq documentation: 34.3. PQescapeLiteral](https://www.postgresql.org/docs/current/libpq-exec.html#LIBPQ-PQESCAPELITERAL) for details.
-
-**Parameters**
-
-- `str:string`: the string to escape.
-
-**Returns**
-
-- `str:string`: the escaped string.
-- `err:any`: the error object.
-
-
 ## str, err = connection:escape_identifier( str )
 
 escape a string for use as an SQL identifier, such as a table, column, or function name.
