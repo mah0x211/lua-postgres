@@ -15,6 +15,7 @@ dependencies = {
     "gpoll >= 0.8",
     "isa >= 0.3.0",
     "metamodule >= 0.4.0",
+    "net >= 0.37.0",
     "postgres-decode >= 0.2.0",
     "time-clock >= 0.4.0",
     "unpack >= 0.1.0",
