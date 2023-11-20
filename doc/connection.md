@@ -157,21 +157,6 @@ see [libpq documentation: 34.11. PQclientEncoding](https://www.postgresql.org/do
 - `encoding:string`: the encoding name.
 
 
-## attr = connection:ssl_attribute( name )
-
-get the SSL attribute.
-
-see [libpq documentation: 34.2. PQsslAttribute](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQSSLATTRIBUTE) for details.
-
-**Parameters**
-
-- `name:string`: the attribute name.
-
-**Returns**
-
-- `attr:string`: the attribute value.
-
-
 ## names = connection:ssl_attribute_names()
 
 get the SSL attribute names.
