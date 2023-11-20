@@ -305,12 +305,6 @@ function Connection:untrace()
     return self.conn:untrace()
 end
 
---- set_trace_flags
---- @params ... string
-function Connection:set_trace_flags(...)
-    self.conn:set_trace_flags(...)
-end
-
 --- flush
 --- @param sec? number
 --- @return boolean ok

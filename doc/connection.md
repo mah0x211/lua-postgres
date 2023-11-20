@@ -295,19 +295,6 @@ see [libpq documentation: 34.11. PQuntrace](https://www.postgresql.org/docs/curr
 - `old:file*`: the previous file stream.
 
 
-## connection:set_trace_flags( ... )
-
-sets the tracing flags.
-
-see [libpq documentation: 34.11. PQsetTraceFlags](https://www.postgresql.org/docs/current/libpq-control.html#LIBPQ-PQSETTRACEFLAGS) for details.
-
-**Parameters**
-
-- `...:string`: the following values are possible:
-    - `"suppress_timestamps"`: omit timestamps from each line.
-    - `"regress_mode"`: redact portions of some messages, for testing frameworks.
-
-
 ## ok, err, timeout = connection:flush( [sec] )
 
 attempts to flush any queued output data to the server.
