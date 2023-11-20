@@ -285,13 +285,6 @@ function Connection:set_notice_receiver(fn)
     self.conn:set_notice_receiver(fn)
 end
 
---- call_notice_processor
---- @param msg string
---- @return boolean ok
-function Connection:call_notice_processor(msg)
-    return self.conn:call_notice_processor(msg)
-end
-
 --- call_notice_receiver
 --- @param res postgres.result
 --- @return boolean ok

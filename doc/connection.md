@@ -256,19 +256,6 @@ see [libpq documentation: 34.13. Notice Processing](https://www.postgresql.org/d
         - `result:postgres.pgresult`: the `postgres.pgresult` object.
 
 
-## ok = connection:call_notice_processor( message )
-
-call the notice processor callback.
-
-**Parameters**
-
-- `message:string`: the notice message.
-
-**Returns**
-
-- `ok:boolean`: `true` if the notice processor callback was called.
-
-
 ## ok = connection:call_notice_receiver( result )
 
 call the notice receiver callback.
