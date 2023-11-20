@@ -18,6 +18,7 @@ modules = {
     ["postgres.message.data_row"] = "lib/message/data_row.lua",
     ["postgres.message.describe_portal"] = "lib/message/describe_portal.lua",
     ["postgres.message.describe_statement"] = "lib/message/describe_statement.lua",
+    ["postgres.message.empty_query_response"] = "lib/message/empty_query_response.lua",
     ["postgres.message.error_response"] = "lib/message/error_response.lua",
     ["postgres.message.execute"] = "lib/message/execute.lua",
     ["postgres.message.negotiation_protocol_version"] = "lib/message/negotiation_protocol_version.lua",
