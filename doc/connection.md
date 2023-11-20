@@ -70,23 +70,6 @@ see [libpq documentation: 33.14. PQstatus](https://www.postgresql.org/docs/curre
     - `"unknown ConnStatusType"`: unknown status type. (should not happen)
 
 
-## status = connection:transaction_status()
-
-get the transaction status.
-
-see [libpq documentation: 33.15. PQtransactionStatus](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQTRANSACTIONSTATUS) for details.
-
-**Returns**
-
-- `status:sting`: the following values are possible:
-    - `"idle"`: connection idle.
-    - `"active"`: command in progress.
-    - `"intrans`": idle, within transaction block.
-    - `"inerror"`: idle, within failed transaction.
-    - `"unknown"`: cannot determine status.
-    - `"unknown TransactionStatusType"`: unknown status type. (should not happen)
-
-
 ## status = connection:parameter_status( param_name )
 
 get the current parameter setting of the server.

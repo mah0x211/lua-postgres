@@ -203,12 +203,6 @@ function Connection:status()
     return self.conn:status()
 end
 
---- transaction_status
---- @return string status
-function Connection:transaction_status()
-    return self.conn:transaction_status()
-end
-
 --- parameter_status
 --- @param param_name string
 --- @return string status
