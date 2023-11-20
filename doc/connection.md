@@ -85,17 +85,6 @@ see [libpq documentation: 33.16. PQparameterStatus](https://www.postgresql.org/d
 - `status:string`: parameter value.
 
 
-## version = connection:protocol_version()
-
-get the version of the connection protocol being used.
-
-see [libpq documentation: 33.17. PQprotocolVersion](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQPROTOCOLVERSION) for details.
-
-**Returns**
-
-- `version:integer`: protocol version.
-
-
 ## version = connection:server_version()
 
 get the version of the server.

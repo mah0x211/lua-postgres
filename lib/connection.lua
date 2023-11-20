@@ -210,12 +210,6 @@ function Connection:parameter_status(param_name)
     return self.conn:parameter_status(param_name)
 end
 
---- protocol_version
---- @return integer version
-function Connection:protocol_version()
-    return self.conn:protocol_version()
-end
-
 --- server_version
 --- @return integer version
 function Connection:server_version()
