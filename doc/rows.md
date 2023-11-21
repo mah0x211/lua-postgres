@@ -3,14 +3,14 @@
 defined in [postgres.rows](../lib/rows.lua) module.
 
 
-## rows = rows.new( res, nrow )
+## rows = rows.new( conn, fields )
 
 create a new instance of `postgres.rows`.
 
 **Parameters**
 
-- `res:postgres.result`: instance of [postgres.result](result.md).
-- `nrow:number`: number of the row.
+- `conn:postgres.connection`: instance of [postgres.connection](connection.md).
+- `fields:table`: the fields property of the [RowDescription](message/row_description.md) message.
 
 **Returns**
 
@@ -19,31 +19,58 @@ create a new instance of `postgres.rows`.
 
 ## ok, err, timeout = rows:close()
 
-close the `postgres.result` instance.
-
-see also documentation of [postgres.result:close()](result.md#ok-err-timeout--resultclose) method.
-
-
-## ok = rows:next()
-
-move the current position to the next row and reset the column position to the first column.  
-
-**NOTE**
-
-you should call this method before reading the first row.
+retrieve the message from the server until the [CommandComplete](message/command_complete.md) or [ErrorResponse](message/error_response.md) message is received.
 
 **Returns**
 
-- `ok:boolean`: `true` if the current position is moved to the next row.
+- `ok:boolean`: `true` on success.
+- `err:any`: error message. this value can be accessed by `rows.error` property.
+- `timeout:boolean`: `true` on timeout. this value can be accessed by `rows.is_timeout` property.
 
 
-## result = rows:result()
+## ok, err, timeout = rows:next()
 
-get the `postgres.result` instance.
+retrieve the next `DataRow` message and reset the column position to the first column.  
+if the `DataRow` message is received, it returns `true`, otherwise it returns `false`.
 
 **Returns**
 
-- `result:postgres.result`: instance of `postgres.result`.
+- `ok:boolean`: `true` on success.
+- `err:any`: error message. this value can be accessed by `rows.error` property.
+- `timeout:boolean`: `true` on timeout. this value can be accessed by `rows.is_timeout` property.
+
+**Usage**
+
+```lua
+-- read the next row
+local ok, err, timeout = rows:next()
+while ok do
+    --- do something
+    ok, err, timeout = rows:next()
+end
+
+if err then
+    print(err)
+elseif timeout then
+    print('timeout')
+end
+```
+
+you can use `rows.error` and `rows.is_timeout` properties.
+
+```lua
+-- read the next row
+while rows:next() do
+    --- do something
+end
+
+-- check the error
+if rows.error then
+    print(rows.error)
+elseif rows.is_timeout then
+    print('timeout')
+end
+```
 
 
 ## field, val = rows:readat( col )
@@ -80,10 +107,10 @@ local connection = require('postgres.connection')
 local conn = assert(connection.new())
 
 -- execute a query
-local res = assert(conn:query([[
+local msg = assert(conn:query([[
     SELECT 1::integer, 'foo', '1999-05-12 12:14:01.1234'::timestamp
 ]]))
-local rows = assert(res:rows())
+local rows = assert(msg:rows())
 while rows:next() do
     -- read the columns of the current row and update the current position
     local field, value = rows:read()
@@ -103,39 +130,39 @@ res:close()
 -- {
 --     field = {
 --         col = 1,
---         format = 0,
+--         format = "text",
 --         mod = -1,
 --         name = "int4",
 --         size = 4,
---         table = 0,
---         tablecol = 0,
---         type = 23
+--         table_col = 0,
+--         table_oid = 0,
+--         type_oid = 23
 --     },
 --     value = "1"
 -- }
 -- {
 --     field = {
 --         col = 2,
---         format = 0,
+--         format = "text",
 --         mod = -1,
 --         name = "?column?",
 --         size = -1,
---         table = 0,
---         tablecol = 0,
---         type = 25
+--         table_col = 0,
+--         table_oid = 0,
+--         type_oid = 25
 --     },
 --     value = "foo"
 -- }
 -- {
 --     field = {
 --         col = 3,
---         format = 0,
+--         format = "text",
 --         mod = -1,
 --         name = "timestamp",
 --         size = 8,
---         table = 0,
---         tablecol = 0,
---         type = 1114
+--         table_col = 0,
+--         table_oid = 0,
+--         type_oid = 1114
 --     },
 --     value = "1999-05-12 12:14:01.1234"
 -- }
@@ -214,9 +241,9 @@ res:close()
 --         mod = -1,
 --         name = "int4",
 --         size = 4,
---         table = 0,
---         tablecol = 0,
---         type = 23
+--         table_col = 0,
+--         table_oid = 0,
+--         type_oid = 23
 --     },
 --     value = 1
 -- }
@@ -227,9 +254,9 @@ res:close()
 --         mod = -1,
 --         name = "?column?",
 --         size = -1,
---         table = 0,
---         tablecol = 0,
---         type = 25
+--         table_col = 0,
+--         table_oid = 0,
+--         type_oid = 25
 --     },
 --     value = "foo"
 -- }
@@ -240,9 +267,9 @@ res:close()
 --         mod = -1,
 --         name = "timestamp",
 --         size = 8,
---         table = 0,
---         tablecol = 0,
---         type = 1114
+--         table_col = 0,
+--         table_oid = 0,
+--         type_oid = 1114
 --     },
 --     value = {
 --         day = 12,

@@ -23,32 +23,37 @@
 local type = type
 local errorf = require('error').format
 local new_inet_client = require('net.stream.inet').client.new
+local parse_conninfo = require('postgres.conninfo')
 local encode_cancel_request = require('postgres.message.cancel_request').encode
 local decode_message = require('postgres.message').decode
 
 --- @class postgres.cancel
 --- @field private msg string cancel message
---- @field host string
---- @field port integer|string
+--- @field conninfo string
+--- @field params table
 --- @field pid integer process ID of the target backend
 --- @field key integer secret key for the target backend
 local Cancel = {}
 
 --- init
---- @param host string
---- @param port integer|string
+--- @param conninfo string
 --- @param pid integer process ID of the target backend
 --- @param key integer secret key for the target backend
 --- @return postgres.cancel
-function Cancel:init(host, port, pid, key)
-    assert(type(host) == 'string', 'host must be table')
-    assert(type(port) == 'number' or type(port) == 'string',
-           'port must be integer or string')
+--- @return any err
+function Cancel:init(conninfo, pid, key)
+    assert(type(conninfo) == 'string', 'conninfo must be string')
     assert(type(pid) == 'number', 'pid must be integer')
     assert(type(key) == 'number', 'key must be integer')
 
-    self.host = host
-    self.port = port
+    -- parse conninfo
+    local uri, err
+    uri, err, conninfo = parse_conninfo(conninfo)
+    if not uri then
+        return nil, err
+    end
+    self.conninfo = conninfo
+    self.uri = uri
     self.pid = pid
     self.key = key
     self.msg = encode_cancel_request(pid, key)
@@ -56,14 +61,14 @@ function Cancel:init(host, port, pid, key)
 end
 
 --- cancel
---- @param sec? number
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Cancel:cancel(sec)
+function Cancel:cancel()
     -- connect to server
-    local sock, err, timeout = new_inet_client(self.host, self.port, {
-        deadline = sec,
+    local host = self.uri.params.hostaddr or self.uri.host
+    local sock, err, timeout = new_inet_client(host, self.uri.port, {
+        deadline = self.uri.params.connect_timeout,
     })
     if not sock then
         return false, err, timeout

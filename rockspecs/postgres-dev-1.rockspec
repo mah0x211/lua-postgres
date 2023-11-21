@@ -11,14 +11,14 @@ description = {
 }
 dependencies = {
     "lua >= 5.1",
-    "errno >= 0.4.0",
-    "gpoll >= 0.8",
-    "isa >= 0.3.0",
-    "metamodule >= 0.4.0",
+    "error >= 0.12.0",
+    "metamodule >= 0.5.0",
     "net >= 0.37.0",
+    "print >= 0.5.0",
     "postgres-decode >= 0.2.0",
     "time-clock >= 0.4.0",
     "unpack >= 0.1.0",
+    "url >= 2.1.0",
     "yyjson >= 0.5.1",
 }
 build = {

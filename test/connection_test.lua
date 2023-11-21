@@ -1,23 +1,31 @@
 require('luacov')
 local testcase = require('testcase')
+local assert = require('assert')
 local new_connection = require('postgres.connection').new
 
 function testcase.new()
     -- test that create new connection
     local c = assert(new_connection())
-    assert.match(c, '^postgres.connection: ', false)
+    assert.match(c, '^postgres%.connection: ', false)
 
     -- test that create new connection with sec
     c = assert(new_connection(nil, 1.0))
-    assert.match(c, '^postgres.connection: ', false)
+    assert.match(c, '^postgres%.connection: ', false)
 end
 
 function testcase.close()
     local c = assert(new_connection())
 
     -- test that close method can be called any times
-    c:close()
-    c:close()
+    local ok, err, timeout = c:close()
+    assert.is_true(ok)
+    assert.is_nil(err)
+    assert.is_nil(timeout)
+
+    ok, err, timeout = c:close()
+    assert.is_true(ok)
+    assert.is_nil(err)
+    assert.is_nil(timeout)
 end
 
 function testcase.replace_named_params()
@@ -69,7 +77,7 @@ function testcase.query()
         baz = 'baz',
         'hello',
     })
-    assert.match(res, '^postgres.result: ', false)
+    assert.match(res, '^postgres%.message%.row_description: ', false)
     assert.is_nil(err)
     assert.is_nil(timeout)
 
@@ -87,23 +95,40 @@ function testcase.query()
         'hello',
         'foo',
     })
+    assert.is_false(rows:next())
+    assert.match(rows.complete, '^postgres%.message%.command_complete: ', false)
 end
 
-function testcase.get_result()
+function testcase.empty_query()
     local c = assert(new_connection())
 
-    -- test that send query and get result
-    assert(c:query([[
+    -- test that send multiple queries and get messages
+    local msg, err, timeout = c:query('')
+    assert.match(msg, '^postgres%.message%.empty_query_response: ', false)
+    assert.is_nil(err)
+    assert.is_nil(timeout)
+end
+
+function testcase.next()
+    local c = assert(new_connection())
+
+    -- test that send multiple queries and get messages
+    local msg, err, timeout = c:query([[
         CREATE TEMP TABLE test_tbl (
             id serial,
             str varchar,
             num integer
         );
         SELECT * FROM test_tbl;
-    ]]))
+    ]])
+    assert.match(msg, '^postgres%.message%.command_complete: ', false)
+    assert.is_nil(err)
+    assert.is_nil(timeout)
+    assert.equal(msg.tag, 'CREATE TABLE')
 
-    local res, err, timeout = c:get_result()
-    assert.match(res, '^postgres.result: ', false)
+    -- test that get next message
+    msg, err, timeout = c:next()
+    assert.match(msg, '^postgres%.message%.row_description: ', false)
     assert.is_nil(err)
     assert.is_nil(timeout)
 end

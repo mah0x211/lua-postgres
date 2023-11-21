@@ -3,14 +3,13 @@
 defined in [postgres.connection](../lib/connection.lua) module.
 
 
-## conn, err, timeout = connection.new( [conninfo] [, sec] )
+## conn, err, timeout = connection.new( [conninfo] )
 
 connect to the server.
 
 **Parameters**
 
-- `conninfo:string`: connection string. see [libpq documentation: 34.1.1. Connection Strings](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING) for details. if not specified, [libpq documentation: 34.15. Environment Variables](https://www.postgresql.org/docs/current/libpq-envars.html) is used.
-- `sec:number`: timeout in seconds.
+- `conninfo:string`: connection uri string. see [libpq documentation: 34.1.1. Connection Strings](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING-URIS) for details. if not specified, [libpq documentation: 34.15. Environment Variables](https://www.postgresql.org/docs/current/libpq-envars.html) is used.
 
 **Returns**
 
@@ -19,62 +18,66 @@ connect to the server.
 - `timeout:boolean`: `true` if timeout.
 
 
-## connection:close()
+## ok, err, timeout = connection:close( force )
 
-close the connection.
+send the `Terminate` message to the server and close the connection.
 
+**Parameters**
 
-## cancel, err = connection:get_cancel()
-
-get the [postgres.pgcancel](pgcancel.md) object.
-
-**Returns**
-
-- `cancel:libpq.cancel`: `libpq.cancel` object.
-- `err:any`: error message.
-
-
-## ok, err = connection:request_cancel()
-
-request cancel the current query to the server.
+- `force:boolean`: if `true` is passed, the connection is closed immediately without sending the terminate message.
 
 **Returns**
 
 - `ok:boolean`: `true` on success.
-- `err:any`: error message, or `nil` if the cancel request is sent successfully.
+- `err:any`: error message.
+- `timeout:boolean`: `true` if timeout.
 
 
-## status = connection:status()
+## ok = connection:is_connected()
 
-get the connection status.
+check if the connection is open.
 
-see [libpq documentation: 33.14. PQstatus](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQSTATUS) for details.
+**Returns**
+
+- `ok:boolean`: `true` if the connection is open.
+
+
+## conninfo = connection:get_conninfo()
+
+get the connection uri string.
+
+**Returns**
+
+- `conninfo:string`: connection uri string.
+
+
+## cancel, err = connection:get_cancel()
+
+get the [postgres.cancel](cancel.md) object.
+
+**Returns**
+
+- `cancel:postgres.cancel`: `postgres.cancel` object.
+- `err:any`: the error object.
+
+
+## status? = connection:status()
+
+get the connection status. it returns the `nil` if the connection is not open or connection is not ready for a new query cycle.
 
 **Returns**
 
 - `status:string`: the following values are possible:
-    - `"ok"`: connection is ready.
-    - `"bad"`: connection is bad.
-    - `"started"`: waiting for connection to be made.
-    - `"made"`: connection OK; waiting to send.
-    - `"awaiting_response"`: waiting for a response from the server.
-    - `"auth_ok"`: received authentication; waiting for backend start-up to finish.
-    - `"setenv"`: this state is no longer used.
-    - `"ssl_startup"`: negotiating SSL.
-    - `"needed"`: internal state: connect() needed.
-    - `"check_writable"`: checking if session is read-write.
-    - `"consume"`: consuming any extra messages.
-    - `"gss_startup"`: negotiating GSSAPI.
-    - `"check_target"`: checking target server properties.
-    - `"check_standby"`: checking if server is in standby mode.
-    - `"unknown ConnStatusType"`: unknown status type. (should not happen)
+    - `"idle"`: not in a transaction block.
+    - `"transaction"`: in a transaction block.
+    - `"failed_transaction"`: in a failed transaction block. (queries will be rejected until block is ended)
 
 
-## status = connection:parameter_status( param_name )
+## value = connection:parameter_status( param_name )
 
 get the current parameter setting of the server.
 
-see [libpq documentation: 33.16. PQparameterStatus](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQPARAMETERSTATUS) for details.
+see [55.2.7. Asynchronous Operations ](https://www.postgresql.org/docs/current/protocol-flow.html#PROTOCOL-ASYNC) for details.
 
 **Parameters**
 
@@ -82,29 +85,30 @@ see [libpq documentation: 33.16. PQparameterStatus](https://www.postgresql.org/d
 
 **Returns**
 
-- `status:string`: parameter value.
+- `value:string`: parameter value.
 
 
 ## version = connection:server_version()
 
 get the version of the server.
 
-see [libpq documentation: 33.18. PQserverVersion](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQSERVERVERSION) for details.
+equivalent to `connection:parameter_status('server_version')`.
 
-**Returns**
 
-- `version:integer`: server version.
+## encoding = connection:client_encoding()
+
+get the client encoding.
+
+equivalent to `connection:parameter_status('client_encoding')`.
 
 
 ## errmsg = connection:error_message()
 
 get the error message most recently generated by an operation on the connection.
 
-see [libpq documentation: 33.19. PQerrorMessage](https://www.postgresql.org/docs/current/libpq-status.html#LIBPQ-PQERRORMESSAGE) for details.
-
 **Returns**
 
-- `errmsg:string`: error message.
+- `errmsg:postgres.message.error_response`: error message.
 
 
 ## pid = connection:backend_pid()
@@ -118,68 +122,54 @@ see [libpq documentation: 33.20. PQbackendPID](https://www.postgresql.org/docs/c
 - `pid:integer`: backend PID.
 
 
-## encoding = connection:client_encoding()
+## connection:set_notice_receiver( noticefn )
 
-get the client encoding.
-
-see [libpq documentation: 34.11. PQclientEncoding](https://www.postgresql.org/docs/current/libpq-control.html#LIBPQ-PQCLIENTENCODING) for details.
-
-**Returns**
-
-- `encoding:string`: the encoding name.
-
-
-## connection:set_notice_receiver( callback )
-
-set the notice receiver callback.
-
-see [libpq documentation: 34.13. Notice Processing](https://www.postgresql.org/docs/current/libpq-notice-processing.html) for details.
+set a callback to notice when the server reports a notice or warning message.  
+if `nil` is passed, the default notice function is used.
 
 **Parameters**
 
-- `callback:function( result:postgres.pgresult )`: The callback function that called for each notice message with the following arguments:
-        - `result:postgres.pgresult`: the `postgres.pgresult` object.
+- `noticefn:function`: notice function as the following signature;  
+    ```lua
+    --- notice function
+    --- @param msg postgres.message.error_response
+    function noticefn( msg )
+        --- do something
+    end
+    ```
 
 
-## old = connection:trace( new )
+## oldfn = connection:trace( tracefn )
 
-enables tracing of the client/server communication to a debugging file stream.
-
-see [libpq documentation: 34.11. PQtrace](https://www.postgresql.org/docs/current/libpq-control.html#LIBPQ-PQTRACE) for details.
-
-**Parameters**
-
-- `new:file*`: the file stream to write the trace to.
-
-**Returns**
-
-- `old:file*`: the previous file stream.
-
-
-## old = connection:untrace()
-
-disables tracing of the client/server communication to a debugging file stream.
-
-see [libpq documentation: 34.11. PQuntrace](https://www.postgresql.org/docs/current/libpq-control.html#LIBPQ-PQUNTRACE) for details.
-
-**Returns**
-
-- `old:file*`: the previous file stream.
-
-
-## ok, err, timeout = connection:flush( [sec] )
-
-attempts to flush any queued output data to the server.
-
-see [libpq documentation: 34.4. PQflush](https://www.postgresql.org/docs/current/libpq-async.html#LIBPQ-PQFLUSH) for details.
+set a callback to trace client/server communication.  
+if `nil` is passed, tracing is disabled.
 
 **Parameters**
 
-- `sec:number`: the maximum time to wait for the flush to occur in seconds.
+- `tracefn:function`: trace function as the following signature;  
+    ```lua
+    --- trace function
+    --- @param from string "client" or "server"
+    --- @param msg string protocol message string
+    function tracefn( from, msg:string )
+        --- do something
+    end
+    ```
 
 **Returns**
 
-- `ok:boolean`: `true` if the data was flushed.
+- `oldfn:function`: the previous trace function.
+
+
+## ok, err, timeout = connection:flush()
+
+send the flush message to the server.
+
+see [55.2.3. Extended Query](https://www.postgresql.org/docs/current/protocol-flow.html#PROTOCOL-FLOW-EXT-QUERY) for details.
+
+**Returns**
+
+- `ok:boolean`: `true` if the flush message was sent successfully.
 - `err:any`: the error object.
 - `timeout:boolean`: `true` if the operation would block.
 
@@ -240,7 +230,7 @@ print(dump(params))
 ```
 
 
-## res, err, timeout = connection:query( qry [, params [, sec]] )
+## msg, err, timeout = connection:query( qry [, params [, max_rows]] )
 
 executes an SQL query and returns the result.  
 before executing the query, the named parameters in the query are replaced with positional parameters with `connection:replace_named_params()` method.
@@ -249,26 +239,30 @@ before executing the query, the named parameters in the query are replaced with 
 
 - `qry:string`: the SQL query.
 - `params:table`: the parameters.
-- `sec:number`: the maximum time to wait for the query to complete in seconds.
+- `max_rows:integer`: the maximum number of rows to return. if `nil` is passed, all rows are returned.
 
 **Returns**
 
-- `res:postgres.result`: the `postgres.result` object.
+- `msg:postgres.message?`: the message object.
 - `err:any`: the error object.
 - `timeout:boolean`: `true` if the operation would block.
 
 
-## res, err, timeout = connection:get_result( [sec] )
+## msg, err, timeout = connection:next()
 
-waits for the next result from a prior query call, and returns it. A `nil` is returned when the command is complete and there will be no more results.
+retrieves a message from the server.
 
-**Parameters**
+if you sent a query message, you must retrieve the response message from the server until it returns a `ReadyForQuery` message.
 
-- `sec:number`: the maximum time to wait for the query to complete in seconds.
+this method will return the `postgres.message` object except the following message types:
+
+- `DataRow`
+- `CloseComplete`
+- `NoticeResponse`
 
 **Returns**
 
-- `res:postgres.result`: the `postgres.result` object.
+- `msg:postgres.message`: the message object.
 - `err:any`: the error object.
 - `timeout:boolean`: `true` if the operation would block.
 

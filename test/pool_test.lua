@@ -1,5 +1,6 @@
 require('luacov')
 local testcase = require('testcase')
+local assert = require('assert')
 local new_connection = require('postgres.connection').new
 local new_pool = require('postgres.pool').new
 
@@ -51,10 +52,7 @@ function testcase.clear()
         c2,
         c3,
     }) do
-        local err = assert.throws(function()
-            c:status()
-        end)
-        assert.match(err, 'attempt to use a freed object')
+        assert.is_false(c:is_connected())
     end
 
     -- test that clear specified number of pooled connection

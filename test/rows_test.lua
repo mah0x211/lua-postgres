@@ -1,5 +1,6 @@
 require('luacov')
 local testcase = require('testcase')
+local assert = require('assert')
 local new_connection = require('postgres.connection').new
 
 function testcase.close()
@@ -17,17 +18,7 @@ function testcase.close()
     assert.is_true(ok)
     assert.is_nil(err)
     assert.is_nil(timeout)
-end
-
-function testcase.result()
-    local c = assert(new_connection())
-    local res = assert(c:query([[
-        SELECT 1
-    ]]))
-    local rows = assert(res:rows())
-
-    -- test that return associated result
-    assert.equal(rows:result(), res)
+    assert.match(rows.complete, '^postgres%.message%.command_complete: ', false)
 end
 
 function testcase.next()
@@ -41,7 +32,6 @@ function testcase.next()
     assert.is_true(rows:next())
     -- test that return false if no more row exists
     assert.is_false(rows:next())
-    res:close()
 end
 
 function testcase.readat()
