@@ -20,8 +20,13 @@
 -- THE SOFTWARE.
 --
 --- assign to local
+local concat = table.concat
+local sort = table.sort
+local sub = string.sub
 local find = string.find
 local getenv = os.getenv
+local pairs = pairs
+local type = type
 local errorf = require('error').format
 local parse_url = require('url').parse
 
@@ -84,12 +89,26 @@ local PQconninfoOptions = {
     geqo = 'PGGEQO',
 }
 
+local HOSTPATHSPEC = {
+    -- userspec
+    user = true,
+    password = true,
+    -- hostspec
+    host = true,
+    port = true,
+    -- pathspec
+    dbname = true,
+}
 --- parse_conninfo
 --- @param conninfo string
 --- @return table? info
 --- @return any err
+--- @return string conninfo normalized connection string
 local function parse_conninfo(conninfo)
+    assert(type(conninfo) == 'string', 'conninfo must be string')
+
     local info = {}
+    local params = {}
     if conninfo ~= '' then
         if not find(conninfo, '^postgres://') and
             not find(conninfo, '^postgresql://') then
@@ -99,21 +118,52 @@ local function parse_conninfo(conninfo)
         -- parse URI
         local uri, pos, err = parse_url(conninfo, true)
         if err then
-            return nil,
-                   errorf('invalid uri character %q found at %d', err, pos + 1)
+            return nil, errorf(
+                       'invalid connection-uri character %q found at %d', err,
+                       pos + 1)
         end
+        -- userspec
         info.user = uri.user
         info.password = uri.password
-        info.host = uri.host
+        -- hostspec
+        info.host = uri.hostname
         info.port = uri.port
-        info.dbname = uri.path
-        info.params = uri.query_params
+        -- pathspec
+        if find(uri.path or '', '^/.+') then
+            info.dbname = sub(uri.path, 2)
+        end
+        -- paramspec
+        if uri.query_params then
+            params = uri.query_params
+        end
+
+        -- overwrite with query parameters
+        for k in pairs(HOSTPATHSPEC) do
+            local v = params[k]
+            if v then
+                info[k] = v[#v]
+                -- remove from params
+                params[k] = nil
+            end
+        end
     end
 
     -- fill default values with environment variables
     for k, v in pairs(PQconninfoOptions) do
+        local target = HOSTPATHSPEC[k] and info or params
+        if target[k] == nil then
+            target[k] = getenv(v)
+        end
+    end
+
+    -- fill default values
+    for k, v in pairs({
+        host = '127.0.0.1',
+        port = '5432',
+        dbname = info.user,
+    }) do
         if info[k] == nil then
-            info[k] = getenv(v)
+            info[k] = v
         end
     end
 
@@ -136,17 +186,47 @@ local function parse_conninfo(conninfo)
     -- * load_balance_hosts (validate)
     -- * client_encoding (validate)
 
-    -- fill default values
-    for k, v in pairs({
-        host = 'localhost',
-        port = '5432',
-    }) do
-        if info[k] == nil then
-            info[k] = v
+    if params.connect_timeout then
+        params.connect_timeout = tonumber(params.connect_timeout)
+        if not params.connect_timeout then
+            return nil, errorf('invalid connect_timeout parameter')
         end
     end
 
-    return info
+    -- build connection string
+    local arr = {
+        'postgres://',
+    }
+    -- userspec
+    if info.user then
+        arr[#arr + 1] = info.user
+        if info.password then
+            arr[#arr + 1] = ':' .. info.password
+        end
+        arr[#arr + 1] = '@'
+    end
+
+    -- hostspec
+    arr[#arr + 1] = info.host .. ':' .. info.port
+    -- dbname
+    if info.dbname then
+        arr[#arr + 1] = '/' .. info.dbname
+    end
+    conninfo = concat(arr)
+
+    -- paramspec
+    arr = {}
+    for k, v in pairs(params) do
+        arr[#arr + 1] = k .. '=' .. v
+    end
+
+    if #arr > 0 then
+        sort(arr)
+        conninfo = conninfo .. '?' .. concat(arr, '&')
+    end
+
+    info.params = params
+    return info, nil, conninfo
 end
 
 return parse_conninfo

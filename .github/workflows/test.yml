@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   luacheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     -
       name: Checkout
@@ -29,7 +29,7 @@ jobs:
       postgres:
         image: postgres:14.3
         env:
-        #   POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
@@ -48,7 +48,6 @@ jobs:
           - "5.3"
           - "5.4"
           - "luajit-2.0.5"
-          - "luajit-openresty"
     steps:
     -
       name: Checkout
@@ -66,13 +65,11 @@ jobs:
     -
       name: Update Apt Packages
       run: |
-        # sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-        # wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
         sudo apt-get update
     -
       name: Install Required Packages
       run: |
-        sudo apt-get install libpq-dev lcov -y
+        sudo apt-get install libtls-dev lcov -y
     -
       name: Install Tools
       run: |

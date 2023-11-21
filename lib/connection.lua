@@ -20,404 +20,414 @@
 -- THE SOFTWARE.
 --
 --- assign to local
-local format = string.format
+local sub = string.sub
 local gsub = string.gsub
 local concat = table.concat
 local pcall = pcall
 local type = type
+local format = require('print').format
+local errorf = require('error').format
 local unpack = require('unpack')
-local isa = require('isa')
-local is_boolean = isa.boolean
-local is_string = isa.string
-local is_table = isa.table
-local is_finite = isa.finite
-local poll = require('gpoll')
-local poll_unwait = poll.unwait
-local poll_wait_readable = poll.wait_readable
-local poll_wait_writable = poll.wait_writable
+local new_inet_client = require('net.stream.inet').client.new
+local parse_conninfo = require('postgres.conninfo')
+local new_cancel = require('postgres.cancel').new
+local encode_message = require('postgres.message').encode
+local decode_message = require('postgres.message').decode
+--- constants
+local INF_POS = math.huge
+local INF_NEG = -math.huge
 
---- @class time.clock.deadline
---- @field time fun(time.clock.deadline):number
---- @field remain fun(time.clock.deadline):number
+--- is_finite
+--- @param v any
+--- @return boolean ok
+local function is_finite(v)
+    return type(v) == 'number' and (v < INF_POS and v > INF_NEG)
+end
 
---- @type fun(duration: number):(time.clock.deadline, number)
-local new_deadline = require('time.clock.deadline').new
-
---- @type fun(conn: postgres.connection, res: postgres.pgresult):postgres.result
-local new_result = require('postgres.result').new
-
---- define postgres.pgresult metatable
---- @class postgres.pgresult
---- @field clear fun(self: postgres.pgresult)
---- @field connection fun(self: postgres.pgresult):postgres.pgconn
---- @field status fun(self: postgres.pgresult):string
---- @field error_message fun(self: postgres.pgresult):string?
---- @field verbose_error_message fun(self: postgres.pgresult, verbosity?:string, visibility?:string):(errmsg:string?, err:any)
---- @field error_field fun(self: postgres.pgresult, field:string):(value:string?, err:any)
---- @field ntuples fun(self: postgres.pgresult):integer
---- @field nfields fun(self: postgres.pgresult):integer
---- @field binary_tuples fun(self: postgres.pgresult):boolean
---- @field fname fun(self: postgres.pgresult, column:integer):string?
---- @field fnumber fun(self: postgres.pgresult, column:string):integer?
---- @field ftable fun(self: postgres.pgresult, column:integer):integer?
---- @field ftablecol fun(self: postgres.pgresult, column:integer):integer?
---- @field fformat fun(self: postgres.pgresult, column:integer):string
---- @field ftype fun(self: postgres.pgresult, column:integer):integer
---- @field fsize fun(self: postgres.pgresult, column:integer):integer
---- @field fmod fun(self: postgres.pgresult, column:integer):integer
---- @field cmd_status fun(self: postgres.pgresult):string
---- @field oid_value fun(self: postgres.pgresult):integer
---- @field cmd_tuples fun(self: postgres.pgresult):(ntuples:integer?, err:any)
---- @field get_value fun(self: postgres.pgresult, row:integer, column:integer):string
---- @field get_length fun(self: postgres.pgresult, row:integer, column:integer):integer
---- @field get_is_null fun(self: postgres.pgresult, row:integer, column:integer):boolean
---- @field nparams fun(self: postgres.pgresult):integer
---- @field param_type fun(self: postgres.pgresult, param_num:integer):integer
-
---- define postres.pgcancel metatable
---- @class postgres.pgcancel
---- @field free fun(self: postgres.pgcancel):boolean
---- @field cancel fun(self: postgres.pgcancel):(ok:boolean, err:any)
-
---- define postgres.pgconn metatable
---- @class postgres.pgconn
---- @field finish fun(self: postgres.pgconn)
---- @field conninfo fun(self: postgres.pgconn):(info:table?, err:any)
---- @field connect_poll fun(self: postgres.pgconn):string
---- @field get_cancel fun(self: postgres.pgconn):(canceler:postgres.pgcancel?, err:any)
---- @field db fun(self: postgres.pgconn):string
---- @field user fun(self: postgres.pgconn):string
---- @field pass fun(self: postgres.pgconn):string
---- @field host fun(self: postgres.pgconn):string
---- @field hostaddr fun(self: postgres.pgconn):string
---- @field port fun(self: postgres.pgconn):string
---- @field options fun(self: postgres.pgconn):string
---- @field status fun(self: postgres.pgconn):string
---- @field transaction_status fun(self: postgres.pgconn):string
---- @field parameter_status fun(self: postgres.pgconn, name:string):string
---- @field protocol_version fun(self: postgres.pgconn):integer
---- @field server_version fun(self: postgres.pgconn):integer
---- @field error_message fun(self: postgres.pgconn):string
---- @field socket fun(self: postgres.pgconn):integer
---- @field backend_pid fun(self: postgres.pgconn):integer
---- @field pipeline_status fun(self: postgres.pgconn):string
---- @field connection_needs_password fun(self: postgres.pgconn):boolean
---- @field connection_used_password fun(self: postgres.pgconn):boolean
---- @field client_encoding fun(self: postgres.pgconn):string
---- @field set_client_encoding fun(self: postgres.pgconn, encoding:string):(ok:boolean, err:any)
---- @field ssl_in_use fun(self: postgres.pgconn):boolean
---- @field ssl_attribute fun(self: postgres.pgconn, name:string):string
---- @field ssl_attribute_names fun(self: postgres.pgconn):table
---- @field set_error_verbosity fun(self: postgres.pgconn, verbosity?:string):(old:string)
---- @field set_error_context_visibility fun(self: postgres.pgconn, context?:string):(old:string)
---- @field set_notice_processor fun(self: postgres.pgconn, fn:function, ...):(old:string)
---- @field set_notice_receiver fun(self: postgres.pgconn, fn:function, ...):(old:string)
---- @field call_notice_processor fun(self: postgres.pgconn, msg:string):boolean
---- @field call_notice_receiver fun(self: postgres.pgconn, res:postgres.pgresult):boolean
---- @field trace fun(self: postgres.pgconn, stream:file*):(old:file*)
---- @field untrace fun(self: postgres.pgconn):(old:file*)
---- @field set_trace_flags fun(self: postgres.pgconn, flg:string, ...)
---- @field exec fun(self: postgres.pgconn, command:string):(result:postgres.pgresult?, err:any)
---- @field exec_params fun(self: postgres.pgconn, command:string, ...):(result:postgres.pgresult?, err:any)
---- @field send_query fun(self: postgres.pgconn, query:string):(ok:boolean, err:any)
---- @field send_query_params fun(self: postgres.pgconn, query:string, ...):(ok:boolean, err:any)
---- @field set_single_row_mode fun(self: postgres.pgconn):boolean
---- @field get_result fun(self: postgres.pgconn):(result:postgres.pgresult?, err:any)
---- @field is_busy fun(self: postgres.pgconn):(busy:boolean, err:any)
---- @field consume_input fun(self: postgres.pgconn):(ok:boolean, err:any)
---- @field enter_pipeline_mode fun(self: postgres.pgconn):(ok:boolean, err:any)
---- @field exit_pipeline_mode fun(self: postgres.pgconn):(ok:boolean, err:any)
---- @field pipeline_sync fun(self: postgres.pgconn):(ok:boolean, err:any)
---- @field send_flush_request fun(self: postgres.pgconn):(ok:boolean, err:any)
---- @field notifies fun(self: postgres.pgconn):(data:table?, err:any)
---- @field put_copy_data fun(self: postgres.pgconn, data:string):(ok:boolean, err:any, again:boolean?)
---- @field put_copy_end fun(self: postgres.pgconn, errmsg?:string):(ok:boolean, err:any, again:boolean?)
---- @field get_copy_data fun(self: postgres.pgconn, async?:boolean):(data:string?, err:any, again:boolean?)
---- @field set_nonblocking fun(self: postgres.pgconn, enable:boolean):(ok:boolean, err:any)
---- @field is_nonblocking fun(self: postgres.pgconn):boolean
---- @field flush fun(self: postgres.pgconn):(ok:boolean, err:any, again:boolean?)
---- @field make_empty_result fun(self: postgres.pgconn, status?:string):(postgres.pgresult, err:any)
---- @field escape_string_conn fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
---- @field escape_literal fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
---- @field escape_identifier fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
---- @field escape_bytea_conn fun(self: postgres.pgconn, str:string):(escaped:string?, err:any)
---- @field encrypt_password_conn fun(self: postgres.pgconn, user:string, password:string, algorithm?:string):(encrypted:string?, err:any)
-
---- @type fun(conninfo?: string, nonblock?: boolean): postgres.pgconn
-local pgconn = require('postgres.pgconn')
+--- noticefn
+--- @param msg postgres.message.error_response
+local function DEFAULT_NOTICEFN(msg)
+    return print('[%s] %s', msg.severity, msg.message)
+end
 
 --- @class postgres.connection
---- @field conn postgres.pgconn
---- @field private fd integer
+--- @field private sock net.Socket
+--- @field private conninfo string url encoded connection info string
+--- @field private uri table<string, string> connection uri table
+--- @field private noticefn fun(postgres.message.error_response)
+--- @field private tracefn? fun(from:string, msg:string)
+--- @field private parameter_statuses table<string, string>
+--- @field private ready_for_query_status string
+--- @field private backend_key_data postgres.message.backend_key_data
+--- @field private error_response postgres.message.error_response
+--- @field private buf string
+--- @field private ready_for_query postgres.message.ready_for_query?
 local Connection = {}
 
 --- init
---- @param conn postgres.pgconn
---- @param conninfo string
---- @return postgres.connection
-function Connection:init(conn, conninfo)
-    self.conn = conn
+--- @param conninfo? string
+--- @return postgres.connection?
+--- @return any err
+--- @return boolean? timeout
+function Connection:init(conninfo)
+    assert(conninfo == nil or type(conninfo) == 'string',
+           'conninfo must be string or nil')
+
+    -- parse connection info string
+    local uri, err
+    uri, err, conninfo = parse_conninfo(conninfo or '')
+    if not uri then
+        return nil, err
+    end
+
+    -- connect to server
+    local host = uri.params.hostaddr or uri.host
+    local sock, timeout
+    sock, err, timeout = new_inet_client(host, uri.port, {
+        deadline = uri.params.connect_timeout,
+    })
+    if not sock then
+        return nil, err, timeout
+    end
+
+    self.sock = sock
     self.conninfo = conninfo
-    self.fd = conn:socket()
-    return self
-end
+    self.uri = uri
+    self.noticefn = DEFAULT_NOTICEFN
+    self.parameter_statuses = {}
+    self.backend_key_data = {}
+    self.buf = ''
 
---- wait_readable
---- @param sec? number
---- @return boolean ok
---- @return any err
---- @return boolean? timeout
-function Connection:wait_readable(sec)
-    -- wait until readable
-    return poll_wait_readable(self.fd, sec)
-end
+    -- send startup message
+    local ok
+    ok, err, timeout = self:startup()
+    if not ok then
+        sock:close()
+        return nil, err, timeout
+    end
 
---- wait_writable
---- @param sec? number
---- @return boolean ok
---- @return any err
---- @return boolean? timeout
-function Connection:wait_writable(sec)
-    return poll_wait_writable(self.fd, sec)
-end
-
---- close
-function Connection:close()
-    if self.fd then
-        poll_unwait(self.fd)
-        self.fd = nil
-        self.conn:finish()
+    -- wait for ReadyForQuery message
+    while true do
+        local msg
+        msg, err, timeout = self:recv()
+        if not msg then
+            self:close(true)
+            return nil, err, timeout
+        elseif msg.type == 'ErrorResponse' then
+            self:close(true)
+            return nil, errorf('[%s] %s', msg.severity, msg.message)
+        elseif msg.type == 'BackendKeyData' then
+            -- update backend_key_data
+            self.backend_key_data = msg
+        elseif msg.type == 'ReadyForQuery' then
+            return self
+        else
+            self:close(true)
+            return nil, errorf('BackendKeyData|ReadyForQuery expected, got %q',
+                               msg.type)
+        end
     end
 end
 
+--- startup
+--- @private
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:startup()
+    -- startup message
+    -- the possible responses are;
+    --  * AuthenticationOk
+    --  * AuthenticationCleartextPassword
+    --  * AuthenticationMD5Password
+    --  * AuthenticationSCMCredential
+    --  * AuthenticationGSS
+    --  * AuthenticationSSPI
+    --  * AuthenticationGSSContinue
+    --  * AuthenticationSASL
+    --  * AuthenticationSASLContinue
+    --  * AuthenticationSASLFinal
+    --  * NegotiateProtocolVersion
+    --  * ErrorResponse
+    local len, err, timeout = self:send(encode_message.startup_message({
+        user = self.uri.user,
+        database = self.uri.dbname,
+        application_name = self.uri.params.application_name,
+        client_encoding = self.uri.params.client_encoding,
+        datestyle = self.uri.params.datestyle,
+        timezone = self.uri.params.timezone,
+        geqo = self.uri.params.geqo,
+    }))
+    if not len then
+        return false, err, timeout
+    end
+
+    -- authentication
+    while true do
+        local msg
+        msg, err, timeout = self:recv()
+        if not msg then
+            return false, err, timeout
+        end
+
+        if msg.type == 'ErrorResponse' then
+            self.error_response = msg
+            return false, errorf('[%s] %s', msg.severity, msg.message)
+        elseif msg.type ~= 'NegotiateProtocolVersion' then
+            if msg.type == 'AuthenticationOk' then
+                return true
+            end
+
+            if msg.type == 'AuthenticationCleartextPassword' then
+                return self:authentication_cleartext_password()
+            end
+            return false,
+                   errorf('unsuppported authentication type: %q', msg.type)
+        end
+    end
+end
+
+--- authentication_cleartext_password sends a cleartext password message
+--- @private
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:authentication_cleartext_password()
+    -- password message
+    -- the possible responses are;
+    --  * AuthenticationOk
+    --  * ErrorResponse
+    local msg, err, timeout = self:password_message(self.uri.password)
+
+    if not msg then
+        return false, err, timeout
+    elseif msg.type == 'ErrorResponse' then
+        self.error_response = msg
+        return false, errorf('[%s] %s', msg.severity, msg.message)
+    elseif msg.type ~= 'AuthenticationOk' then
+        return false, errorf('AuthenticationOk|ErrorResponse expected, got %q',
+                             msg.type)
+    end
+
+    return true
+end
+
+--- password_message sends a postgres.message.password_message message
+--- @private
+--- @param pswd string
+--- @return postgres.message? msg
+--- @return any err
+--- @return boolean? timeout
+function Connection:password_message(pswd)
+    assert(type(pswd) == 'string', 'pswd must be string')
+    local len, err, timeout = self:send(encode_message.password_message(pswd))
+    if not len then
+        return nil, err, timeout
+    end
+
+    return self:recv()
+end
+
+--- send sends a message to the connection.
+--- @param s string
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:send(s)
+    if not self.sock then
+        return nil, errorf('connection is closed')
+    end
+
+    local len, err, timeout = self.sock:send(s)
+    if not len then
+        return false, err, timeout
+    end
+    self.ready_for_query = nil
+
+    if self.tracefn then
+        self.tracefn('client', s)
+    end
+    return true
+end
+
+--- recv retrieves a message from the connection.
+--- if the following message types are received;
+---   * ParameterStatus: update runtime parameters
+---   * NoticeResponse: update notice field
+---   * ReadyForQuery: update status and ready field
+---
+--- if a message type is other than the above message types
+--- except ReadyForQuery, return the message
+--- @return postgres.message? msg
+--- @return any err
+--- @return boolean? timeout
+function Connection:recv()
+    if not self.sock then
+        return nil, errorf('connection is closed')
+    end
+
+    while not self.ready_for_query do
+        local msg, err, again = decode_message(self.buf)
+        if again then
+            local s, timeout
+            s, err, timeout = self.sock:recv()
+            if not s then
+                return nil, err, timeout
+            end
+            self.buf = self.buf .. s
+        elseif not msg then
+            return nil, err
+        else
+            -- consume bufferered data
+            local data = sub(self.buf, 1, msg.consumed)
+            self.buf = sub(self.buf, msg.consumed + 1)
+            msg.consumed = nil
+
+            if self.tracefn then
+                self.tracefn('server', data)
+            end
+
+            if msg.type == 'ParameterStatus' then
+                -- update parameter status
+                self.parameter_statuses[msg.name] = msg.value
+            elseif msg.type == 'NoticeResponse' then
+                self.noticefn(msg)
+            else
+                -- print(dump {
+                --     msg = msg,
+                --     buf = self.buf,
+                -- })
+                if msg.type == 'ReadyForQuery' then
+                    self.ready_for_query = msg
+                end
+                msg.conn = self
+                return msg
+            end
+            -- continue to next message
+        end
+    end
+end
+
+--- close
+--- @param force? boolean
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:close(force)
+    assert(force == nil or type(force) == 'boolean',
+           'force must be boolean or nil')
+    if not self.sock then
+        return true
+    end
+
+    local len, err, timeout
+    if not force then
+        len, err, timeout = self:send(encode_message.terminate())
+    end
+
+    self.sock:close()
+    self.sock = nil
+    if not force and not len then
+        -- failed to send terminate message
+        return false, err, timeout
+    end
+    return true
+end
+
+--- is_connected
+--- @return boolean connected
+function Connection:is_connected()
+    return self.sock ~= nil
+end
+
+--- get_conninfo
+--- @return string conninfo
+function Connection:get_conninfo()
+    return self.conninfo
+end
+
 --- get_cancel
---- @return postgres.pgcancel? cancel
+--- @return postgres.cancel cancel
 --- @return any err
 function Connection:get_cancel()
-    return self.conn:get_cancel()
+    return new_cancel(self.conninfo, self.backend_key_data.pid,
+                      self.backend_key_data.key)
 end
 
 --- status
---- @return string status
+--- @return string?
+---| 'idle'
+---| 'transaction'
+---| 'failed_transaction'
 function Connection:status()
-    return self.conn:status()
-end
-
---- transaction_status
---- @return string status
-function Connection:transaction_status()
-    return self.conn:transaction_status()
+    if self.sock and self.ready_for_query then
+        return self.ready_for_query.status
+    end
 end
 
 --- parameter_status
 --- @param param_name string
---- @return string status
+--- @return string? status
 function Connection:parameter_status(param_name)
-    return self.conn:parameter_status(param_name)
-end
-
---- protocol_version
---- @return integer version
-function Connection:protocol_version()
-    return self.conn:protocol_version()
+    return self.parameter_statuses[param_name]
 end
 
 --- server_version
---- @return integer version
+--- @return string? version
 function Connection:server_version()
-    return self.conn:server_version()
-end
-
---- error_message
---- @return string errmsg
-function Connection:error_message()
-    return self.conn:error_message()
-end
-
---- backend_pid
---- @return integer pid
-function Connection:backend_pid()
-    return self.conn:backend_pid()
-end
-
---- pipeline_status
---- @return string status
-function Connection:pipeline_status()
-    return self.conn:pipeline_status()
-end
-
---- connection_needs_password
---- @return boolean ok
-function Connection:connection_needs_password()
-    return self.conn:connection_needs_password()
-end
-
---- connection_used_password
---- @return boolean ok
-function Connection:connection_used_password()
-    return self.conn:connection_used_password()
+    return self:parameter_status('server_version')
 end
 
 --- client_encoding
 --- @return string encoding
 function Connection:client_encoding()
-    return self.conn:client_encoding()
+    return self:parameter_status('client_encoding')
 end
 
---- set_client_encoding
---- @param encoding string
---- @return boolean ok
---- @return any err
-function Connection:set_client_encoding(encoding)
-    return self.conn:set_client_encoding(encoding)
+--- error_message
+--- @return postgres.message.error_response? msg
+function Connection:error_message()
+    return self.error_response
 end
 
---- ssl_in_use
---- @return boolean ok
-function Connection:ssl_in_use()
-    return self.conn:ssl_in_use()
-end
-
---- ssl_attribute
---- @param attr_name string
---- @return string attr
-function Connection:ssl_attribute(attr_name)
-    return self.conn:ssl_attribute(attr_name)
-end
-
---- ssl_attribute_names
---- @return string[] attr_names
-function Connection:ssl_attribute_names()
-    return self.conn:ssl_attribute_names()
-end
-
---- set_error_verbosity
---- @param verbosity string
---- @return string verbosity
-function Connection:set_error_verbosity(verbosity)
-    return self.conn:set_error_verbosity(verbosity)
-end
-
---- set_error_context_visibility
---- @param visibility string
---- @return string visibility
-function Connection:set_error_context_visibility(visibility)
-    return self.conn:set_error_context_visibility(visibility)
-end
-
---- set_notice_processor
---- @param fn function
-function Connection:set_notice_processor(fn)
-    self.conn:set_notice_processor(fn)
+--- backend_pid
+--- @return integer pid
+function Connection:backend_pid()
+    return self.backend_key_data.pid
 end
 
 --- set_notice_receiver
---- @param fn function
-function Connection:set_notice_receiver(fn)
-    self.conn:set_notice_receiver(fn)
-end
-
---- call_notice_processor
---- @param msg string
---- @return boolean ok
-function Connection:call_notice_processor(msg)
-    return self.conn:call_notice_processor(msg)
-end
-
---- call_notice_receiver
---- @param res postgres.result
---- @return boolean ok
-function Connection:call_notice_receiver(res)
-    return self.conn:call_notice_receiver(res.res)
+--- @param noticefn function
+function Connection:set_notice_receiver(noticefn)
+    if noticefn == nil then
+        noticefn = DEFAULT_NOTICEFN
+    elseif type(noticefn) ~= 'function' then
+        error('noticefn must be function')
+    end
+    self.noticefn = noticefn
 end
 
 --- trace
---- @param f file*
---- @return file* f
-function Connection:trace(f)
-    return self.conn:trace(f)
+--- @param tracefn? fun(from:string, msg:string)
+--- @return function oldfn
+function Connection:trace(tracefn)
+    assert(tracefn == nil or type(tracefn) == 'function',
+           'tracefn must be function or nil')
+    local oldfn = self.tracefn
+    self.tracefn = tracefn
+    return oldfn
 end
 
---- untrace
---- @return file* f
-function Connection:untrace()
-    return self.conn:untrace()
-end
-
---- set_trace_flags
---- @params ... string
-function Connection:set_trace_flags(...)
-    self.conn:set_trace_flags(...)
-end
-
---- escape_string
---- @param str string
---- @return string? str
---- @return any err
-function Connection:escape_string_conn(str)
-    return self.conn:escape_string_conn(str)
-end
-
---- escape_literal
---- @param str string
---- @return string? str
---- @return any err
-function Connection:escape_literal(str)
-    return self.conn:escape_literal(str)
-end
-
---- escape_identifier
---- @param str string
---- @return string? str
---- @return any err
-function Connection:escape_identifier(str)
-    return self.conn:escape_identifier(str)
-end
-
---- escape_bytea_conn
---- @param str string
---- @return string? str
---- @return any err
-function Connection:escape_bytea_conn(str)
-    return self.conn:escape_bytea_conn(str)
-end
-
---- encrypt_password_conn
---- @param passwd string
---- @param user string
---- @param algorithm string
---- @return string? str
---- @return any err
-function Connection:encrypt_password_conn(passwd, user, algorithm)
-    return self.conn:encrypt_password_conn(passwd, user, algorithm)
-end
-
---- flush
---- @param sec? number
+--- flush sends a postgres.message.flush message
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Connection:flush(sec)
-    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
-
-    local deadline = sec and new_deadline(sec)
-    while true do
-        local ok, err, again = self.conn:flush()
-        if not again then
-            return ok, err
-        elseif deadline then
-            sec = deadline:remain()
-            if sec <= 0 then
-                return false, nil, true
-            end
-        end
-
-        local timeout
-        ok, err, timeout = self:wait_writable(sec)
-        if not ok then
-            return false, err, timeout
-        end
+function Connection:flush()
+    local len, err, timeout = self:send(encode_message.flush())
+    if not len then
+        return false, err, timeout
     end
+    return true
 end
 
 --- stringify
@@ -442,13 +452,13 @@ end
 
 --- replace_named_params
 --- @param query string
---- @param params table
+--- @param params table<string, any>
 --- @return string? query
 --- @return any err
 --- @return table? params
 function Connection:replace_named_params(query, params)
-    assert(is_string(query), 'query must be string')
-    assert(is_table(params), 'params must be table')
+    assert(type(query) == 'string', 'query must be string')
+    assert(type(params) == 'table', 'params must be table')
 
     local newparams = {
         unpack(params),
@@ -525,153 +535,204 @@ end
 
 --- query
 --- @param query string
---- @param params? table?
---- @param sec? number
---- @param single_row_mode? boolean
---- @return postgres.result? res
+--- @param params table<string, any>?
+--- @param max_rows integer?
+--- @return postgres.message? msg
 --- @return any err
 --- @return boolean? timeout
-function Connection:query(query, params, sec, single_row_mode)
-    assert(is_string(query), 'query must be string')
-    assert(params == nil or is_table(params), 'params must be table or nil')
-    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
-    assert(single_row_mode == nil or is_boolean(single_row_mode),
-           'single_row_mode must be boolean or nil')
+function Connection:query(query, params, max_rows)
+    assert(type(query) == 'string', 'query must be string')
+    assert(params == nil or type(params) == 'table',
+           'params must be table or nil')
+    assert(max_rows == nil or is_finite(max_rows),
+           'max_rows must be integer or nil')
+    if not self.ready_for_query then
+        return nil, errorf('connection is not ready for query')
+    end
+
     if params == nil then
         params = {}
     end
 
-    local err
-    query, err, params = self:replace_named_params(query, params)
-    if not query then
+    if max_rows == nil then
+        max_rows = 0
+    end
+
+    local parsed_query, err, values = self:replace_named_params(query, params)
+    if not parsed_query then
         return nil, err
     end
 
-    local ok
-    if #params == 0 then
-        ok, err = self.conn:send_query(query)
-    else
-        ok, err = self.conn:send_query_params(query, unpack(params))
+    if #values == 0 and max_rows == 0 then
+        return self:simple_query(parsed_query)
     end
-    if not ok then
-        return nil, err
-    end
+    return self:extended_query(parsed_query, values, max_rows)
+end
 
-    local timeout
-    ok, err, timeout = self:flush(sec)
-    if not ok then
+--- simple_query
+--- @private
+--- @param query string
+--- @return postgres.message? msg
+--- @return any err
+--- @return boolean? timeout
+function Connection:simple_query(query)
+    -- The possible response messages from the backend are:
+    --  * CommandComplete
+    --  * CopyInResponse
+    --  * CopyOutResponse
+    --  * RowDescription
+    --  * DataRow
+    --  * EmptyQueryResponse
+    --  * ErrorResponse
+    --  * NoticeResponse
+    --  * ReadyForQuery
+    local len, err, timeout = self:send(encode_message.query(query))
+    if not len then
         return nil, err, timeout
-    elseif single_row_mode then
-        assert(self.conn:set_single_row_mode(), 'failed to set single row mode')
     end
-
-    return self:get_result(sec)
+    return self:next()
 end
 
---- get_result
---- @param sec? number
---- @return postgres.result? res
+--- extended_query
+--- @private
+--- @param query string
+--- @param values string[]
+--- @param max_rows integer?
+--- @return postgres.message? res
 --- @return any err
 --- @return boolean? timeout
-function Connection:get_result(sec)
-    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
+function Connection:extended_query(query, values, max_rows)
+    local len, err, timeout = self:send(concat({
+        -- prepare query
+        -- the possible responses are:
+        --  * ParseComplete
+        --  * ErrorResponse
+        encode_message.parse('', query), -- unnamed statement
 
+        -- bind parameters to the prepared query
+        -- the possible responses are:
+        --  * BindComplete
+        --  * ErrorResponse
+        encode_message.bind('', '', values), -- unnamed portal and statement
+
+        -- describe portal
+        -- the possible responses are:
+        --  * RowDescription
+        --  * NoData
+        --  * ErrorResponse
+        encode_message.describe_portal(''), -- unnamed portal
+
+        -- execute portal
+        -- the possible responses are:
+        --  * CommandComplete
+        --  * CopyInResponse
+        --  * CopyOutResponse
+        --  * DataRow
+        --  * EmptyQueryResponse
+        --  * ErrorResponse
+        --  * NoticeResponse
+        encode_message.execute(''), -- unnamed portal
+
+        -- close_statement
+        -- the possible responses are:
+        --  * CloseComplete
+        --  * ErrorResponse
+        encode_message.close_statement(''), -- unnamed statement
+
+        -- sync
+        -- the possible responses are:
+        --  * ReadyForQuery
+        --  * ErrorResponse
+        encode_message.sync(),
+    }))
+    if not len then
+        return nil, err, timeout
+    end
+
+    -- wait for ParseComplete and BindComplete messages
+    local target = 'ParseComplete'
+    local msg
     while true do
-        local busy, err = self.conn:is_busy()
-        if err then
-            return nil, err
-        elseif not busy then
-            local res
-            res, err = self.conn:get_result()
-            if not res then
-                return nil, err
-            end
-            return new_result(self, res)
-        end
-
-        -- wait until readable
-        local ok, werr, timeout = self:wait_readable(sec)
-        if not ok then
-            return nil, werr, timeout
-        end
-    end
-end
-
---- make_empty_result
---- @param status string
---- @return postgres.result? res
---- @return any err
-function Connection:make_empty_result(status)
-    local res, err = self.conn:make_empty_result(status)
-    if not res then
-        return nil, err
-    end
-    return new_result(self, res)
-end
-
-Connection = require('metamodule').new(Connection)
-
---- connect
---- @param conninfo? string
---- @param sec? number
---- @return postgres.connection? conn
---- @return any err
---- @return boolean? timeout
-local function new(conninfo, sec)
-    assert(conninfo == nil or is_string(conninfo),
-           'conninfo must be string or nil')
-    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
-
-    local conn, err = pgconn(conninfo, true)
-    if err then
-        return nil, err
-    end
-
-    -- check status
-    local status = conn:status()
-    if status == 'bad' then
-        return nil, conn:error_message()
-    end
-
-    -- async connect
-    local deadline = sec and new_deadline(sec)
-    local c = Connection(conn, conninfo or '')
-    while true do
-        -- check status
-        status = conn:connect_poll()
-        if status == 'ok' then
-            return c
-        elseif status == 'failed' then
-            err = conn:error_message()
-            c:close()
-            return nil, err
-        elseif deadline then
-            sec = deadline:remain()
-            if sec <= 0 then
-                c:close()
-                return nil, nil, true
-            end
-        end
-
-        -- polling a status
-        local ok, timeout
-        if status == 'reading' then
-            ok, err, timeout = c:wait_readable(sec)
-        elseif status == 'writing' then
-            ok, err, timeout = c:wait_writable(sec)
-        else
-            c:close()
-            return nil, format('got unsupported status: %d', status)
-        end
-
-        -- got error or timeout
-        if not ok then
-            c:close()
+        msg, err, timeout = self:recv()
+        if not msg then
             return nil, err, timeout
+        elseif msg.type == 'ErrorResponse' then
+            self.error_response = msg
+            return msg
+        elseif msg.type ~= target then
+            return nil, errorf(
+                       target .. '|ErrorResponse expects, got %q response',
+                       msg.type)
+        elseif target == 'ParseComplete' then
+            target = 'BindComplete'
+        elseif target == 'BindComplete' then
+            break
         end
+    end
+
+    -- wait for RowDescription or NoData message
+    msg, err, timeout = self:recv()
+    if not msg then
+        return nil, err, timeout
+    elseif msg.type == 'ErrorResponse' then
+        self.error_response = msg
+        -- return error message
+        return msg
+    elseif msg.type == 'RowDescription' then
+        return msg
+    elseif msg.type == 'NoData' then
+        return self:next()
+    else
+        return nil, errorf(
+                   'RowDescription|NoData|ErrorResponse expects, got %q response',
+                   msg.type)
+    end
+end
+
+--- next retrieves a next message from the connection.
+--- if you sent a query message, you must retrieve a response message from the
+--- server until it returns a ReadyForQuery message.
+--- this method will return the message except the following message types:
+---  * DataRow
+---  * CloseComplete
+---  * NoticeResponse
+--- @return postgres.message? msg
+--- @return any err
+--- @return boolean? timeout
+function Connection:next()
+    --
+    -- the possible responses are:
+    --  * CommandComplete
+    --  * CopyInResponse
+    --  * CopyOutResponse
+    --  * RowDescription
+    --  * DataRow
+    --  * EmptyQueryResponse
+    --  * ErrorResponse
+    --  * ReadyForQuery
+    --  * NoticeResponse
+    --
+    -- it returns result if the message type is not the following:
+    --  * DataRow
+    --  * CloseComplete
+    --  * NoticeResponse
+    --
+    while true do
+        local msg, err, timeout = self:recv()
+        if not msg then
+            return nil, err, timeout
+        elseif msg.type == 'ReadyForQuery' then
+            return msg
+        elseif msg.type == 'ErrorResponse' then
+            self.error_response = msg
+            return msg
+        elseif msg.type ~= 'DataRow' and msg.type ~= 'CloseComplete' then
+            return msg
+        end
+        -- ignore DataRow and CloseComplete messages
     end
 end
 
 return {
-    new = new,
+    new = require('metamodule').new(Connection),
 }

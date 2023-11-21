@@ -24,43 +24,37 @@ local connection = require('postgres.connection')
 -- connect to the database
 local conn = assert(connection.new())
 
--- execute a query
-local res = assert(conn:query('SELECT * FROM pg_database;'))
+-- execute a query and retrieve the RowDescription message
+local msg = assert(conn:query('SELECT * FROM pg_database;'))
 
--- get the stat table
-local stat = assert(res:stat())
-
--- calculate the width of the rows and columns for printing
-local recwidth = #(tostring(stat.ntuples))
+-- calculate the width of the columns for printing
 local colwidth = 0
-for _, field in ipairs(stat.fields) do
+for _, field in ipairs(msg.fields) do
     colwidth = math.max(colwidth, #field.name)
 end
 
 -- read the result rows
 local nrec = 0
-local rows = assert(res:rows())
--- read the next row
+local rows = assert(msg:rows())
+-- retrieve the DataRow message  
 while rows:next() do
     nrec = nrec + 1
-    print(('-[ RECORD %' .. recwidth .. 'd ]-+------------'):format(nrec))
+    print(('-[ RECORD %d ]-+------------'):format(nrec))
 
     -- read the columns of the current row
     local field, value = rows:read()
-    --
-    -- NOTE: you can also use the `local field, value, err = rows:scan()` method 
-    -- to get the decoded values if data types are known.
-    -- please see the doc/rows.md and doc/decoder.md for more details.
-    --
-
     while field do
         print(('%' .. colwidth .. 's | %s'):format(field.name, value or ''))
         field, value = rows:read()
     end
 end
 
--- close the result
-res:close()
+if rows.complete then
+    print('----------------------------')
+    print(('%s %d rows\n'):format(rows.complete.tag, rows.complete.rows))
+end
+
+rows:close()
 ```
 
 

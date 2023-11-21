@@ -20,14 +20,11 @@
 -- THE SOFTWARE.
 --
 --- assign to local
-local type = type
 local htonl = require('postgres.htonl')
 
 --- encode
---- @param query string
 --- @return string
-local function encode(query)
-    assert(type(query) == 'string', 'query must be string')
+local function encode()
     --
     -- Flush (F)
     --   Byte1('H')

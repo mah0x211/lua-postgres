@@ -2,6 +2,7 @@ codefromstrings = false
 runreport = true
 deletestats = true
 modules = {
+    ["postgres.cancel"] = "lib/cancel.lua",
     ["postgres.connection"] = "lib/connection.lua",
     ["postgres.conninfo"] = "lib/conninfo.lua",
     ["postgres.decoder"] = "lib/decoder.lua",
@@ -38,7 +39,5 @@ modules = {
     ["postgres.message.sync"] = "lib/message/sync.lua",
     ["postgres.message.terminate"] = "lib/message/terminate.lua",
     ["postgres.pool"] = "lib/pool.lua",
-    ["postgres.result"] = "lib/result.lua",
     ["postgres.rows"] = "lib/rows.lua",
-    ["postgres.rows.single"] = "lib/rows/single.lua",
 }

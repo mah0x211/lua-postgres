@@ -19,26 +19,33 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 --
+--- assign to local
+local type = type
+local errorf = require('error').format
+local instanceof = require('metamodule').instanceof
 local DEFAULT_DECODER = require('postgres.decoder').new()
 
 --- @class postgres.rows
---- @field res postgres.result
---- @field nrow integer
---- @field fields table<string|integer, table<string, any>>
---- @field rowi integer
+--- @field private conn postgres.connection?
+--- @field private coli integer
+--- @field private row table? DataRow message
+--- @field fields table RowDescription.fields
+--- @field error string?
+--- @field is_timeout boolean?
+--- @field complete table? CommandComplete message
 local Rows = {}
 
 --- init
---- @param res postgres.result
---- @param nrow integer
---- @param fields table<string|integer, table<string, any>>
+--- @param conn postgres.connection
+--- @param fields table RowDescription fields
 --- @return postgres.rows
-function Rows:init(res, nrow, fields)
-    self.res = res
-    self.nrow = nrow
-    self.fields = fields
-    self.rowi = 0
+function Rows:init(conn, fields)
+    assert(instanceof(conn, 'postgres.connection'),
+           'conn must be a postgres.connection')
+    assert(type(fields) == 'table')
+    self.conn = conn
     self.coli = 1
+    self.fields = fields
     return self
 end
 
@@ -47,26 +54,92 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Rows:close()
-    return self.res:close()
-end
-
---- next retrives the next row
---- @return boolean ok
-function Rows:next()
-    if self.rowi < self.nrow then
-        -- set to next row index
-        self.rowi = self.rowi + 1
-        -- reset column position
-        self.coli = 1
+    if not self.conn then
         return true
     end
-    return false
+
+    -- remove current row
+    self.row = nil
+    -- retrieve ReadyForQuery message
+    while true do
+        -- the allowed message types are;
+        --  * DataRow
+        --  * CommandComplete
+        --  * ErrorResponse
+        local res, err, timeout = self.conn:recv()
+        if not res then
+            if err then
+                self.error = errorf('failed to retrieve message: %s', err)
+            end
+            self.is_timeout = timeout
+            self.conn = nil
+            return false, self.error, timeout
+        end
+
+        if res.type == 'CommandComplete' then
+            self.complete = res
+            self.conn = nil
+            return true
+        elseif res.type == 'ErrorResponse' then
+            self.error = errorf('[%s] %s', res.severity, res.message)
+            self.conn = nil
+            return false, self.error
+        elseif res.type ~= 'DataRow' then
+            self.error = errorf(
+                             'DataRow|CommandComplete|ErrorResponse expected, got %q',
+                             res.type)
+            self.conn = nil
+            return false, self.error
+        end
+    end
 end
 
---- result
---- @return postgres.result res
-function Rows:result()
-    return self.res
+--- next retrives the DataRow message
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Rows:next()
+    if not self.conn then
+        return false
+    end
+
+    -- remove current row
+    self.row = nil
+    -- retrieve next row
+    -- the allowed message types are;
+    --  * DataRow
+    --  * CommandComplete
+    --  * ErrorResponse
+    local res, err, timeout = self.conn:recv()
+    if not res then
+        if err then
+            self.error = errorf('failed to retrieve message: %s', err)
+        end
+        self.is_timeout = timeout
+        self.conn = nil
+        return false, self.error, timeout
+    end
+
+    if res.type == 'DataRow' then
+        -- set current row and reset column index
+        self.row = res
+        self.coli = 1
+        return true
+    elseif res.type == 'CommandComplete' then
+        self.complete = res
+        self.conn = nil
+        return false
+    elseif res.type == 'ErrorResponse' then
+        self.error = errorf('[%s] %s', res.severity, res.message)
+        self.conn = nil
+        return false, self.error
+    else
+        self.error = errorf(
+                         'DataRow|CommandComplete|ErrorResponse expected, got %q',
+                         res.type)
+        self.conn = nil
+        return false, self.error
+    end
 end
 
 --- readat read specified column value
@@ -74,9 +147,9 @@ end
 --- @return table? field
 --- @return string? val
 function Rows:readat(col)
-    local field = self.rowi > 0 and self.fields[col]
+    local field = self.row and self.fields[col]
     if field then
-        return field, self.res:value(self.rowi, field.col)
+        return field, self.row.values[field.col]
     end
 end
 
@@ -84,10 +157,10 @@ end
 --- @return table? field
 --- @return string? val
 function Rows:read()
-    local field = self.rowi > 0 and self.fields[self.coli]
+    local field = self.row and self.fields[self.coli]
     if field then
         self.coli = self.coli + 1
-        return field, self.res:value(self.rowi, field.col)
+        return field, self.row.values[field.col]
     end
 end
 
@@ -104,7 +177,7 @@ function Rows:scanat(col, decoder)
 
     local field, val = self:readat(col)
     if field and val then
-        return field, decoder:decode_by_oid(field.type, val)
+        return field, decoder:decode_by_oid(field.type_oid, val)
     end
     return field
 end
@@ -121,7 +194,7 @@ function Rows:scan(decoder)
 
     local field, val = self:read()
     if field and val then
-        return field, decoder:decode_by_oid(field.type, val)
+        return field, decoder:decode_by_oid(field.type_oid, val)
     end
     return field
 end

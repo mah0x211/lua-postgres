@@ -23,10 +23,13 @@
 local next = next
 local pairs = pairs
 local pcall = pcall
+local select = select
+local type = type
+local floor = math.floor
+local getmetatable = debug.getmetatable
 local setmetatable = setmetatable
-local isa = require('isa')
-local is_callable = isa.callable
-local is_uint = isa.uint
+local instanceof = require('metamodule').instanceof
+local parse_conninfo = require('postgres.conninfo')
 
 --- @class postgres.pool
 --- @field pools table<string, table<postgres.connection, boolean>>
@@ -40,12 +43,17 @@ end
 --- set
 --- @param conn postgres.connection
 function Pool:set(conn)
-    local pool = self.pools[conn.conninfo]
+    assert(instanceof(conn, 'postgres.connection'),
+           'conn must be postgres.connection')
+    local conninfo = conn:get_conninfo()
+    local pool = self.pools[conninfo]
+
     if not pool then
+        -- create new pool for the conninfo
         pool = setmetatable({}, {
             __mode = 'k',
         })
-        self.pools[conn.conninfo] = pool
+        self.pools[conninfo] = pool
     end
     pool[conn] = true
 end
@@ -55,16 +63,14 @@ end
 --- @return postgres.connection? conn
 function Pool:get(conninfo)
     if conninfo == nil then
-        conninfo = ''
+        conninfo = select(3, parse_conninfo(''))
     end
 
     local pool = self.pools[conninfo]
-    if pool then
-        local conn = next(pool)
-        if conn then
-            pool[conn] = nil
-            return conn
-        end
+    local conn = pool and next(pool)
+    if conn then
+        pool[conn] = nil
+        return conn
     end
 end
 
@@ -72,6 +78,27 @@ end
 --- @return boolean ok
 local function default_pool_clear_callback()
     return true
+end
+
+local INF_POS = math.huge
+
+--- is_uint
+--- @param v any
+--- @return boolean
+local function is_uint(v)
+    return type(v) == 'number' and (v < INF_POS and v >= 0) and floor(v) == v
+end
+
+--- is_callable
+--- @param v any
+--- @return boolean
+local function is_callable(v)
+    if type(v) == 'function' then
+        return true
+    end
+
+    local mt = getmetatable(v)
+    return type(mt) == 'table' and type(mt.__call) == 'function'
 end
 
 --- clear

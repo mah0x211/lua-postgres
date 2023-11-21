@@ -1,5 +1,6 @@
 require('luacov')
 local testcase = require('testcase')
+local assert = require('assert')
 local new_decoder = require('postgres.decoder').new
 local new_connection = require('postgres.connection').new
 
@@ -41,8 +42,7 @@ function testcase.decode_boolean_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         true,
         false,
@@ -61,8 +61,7 @@ function testcase.decode_int_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         1,
         2,
@@ -81,8 +80,7 @@ function testcase.decode_int_mrange()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         [1] = {
             [1] = 1,
@@ -108,8 +106,7 @@ function testcase.decode_int_range_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         [1] = {
             [1] = 1,
@@ -130,8 +127,7 @@ function testcase.decode_int_mrange_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             [1] = {
@@ -159,8 +155,7 @@ function testcase.decode_float_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         1.2,
         2.3,
@@ -179,8 +174,7 @@ function testcase.decode_float_range()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         [1] = 1.2,
         [2] = 3.4,
@@ -199,8 +193,7 @@ function testcase.decode_float_mrange()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         [1] = {
             [1] = 1.2,
@@ -228,8 +221,7 @@ function testcase.decode_float_range_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             [1] = 1.2,
@@ -252,8 +244,7 @@ function testcase.decode_float_mrange_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             [1] = {
@@ -281,8 +272,7 @@ function testcase.decode_date_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(#v, 3)
     for _, date in ipairs(v) do
         assert.is_int(date.year)
@@ -302,8 +292,7 @@ function testcase.decode_date_range()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             year = 1999,
@@ -333,8 +322,7 @@ function testcase.decode_date_mrange()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -376,8 +364,7 @@ function testcase.decode_date_range_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -409,8 +396,7 @@ function testcase.decode_date_mrange_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -458,8 +444,7 @@ function testcase.decode_time_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             hour = 11,
@@ -497,8 +482,7 @@ function testcase.decode_timestamp_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             year = 1999,
@@ -553,8 +537,7 @@ function testcase.decode_tsrange()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         [1] = {
             year = 1999,
@@ -589,8 +572,7 @@ function testcase.decode_tsmrange()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             [1] = {
@@ -629,8 +611,7 @@ function testcase.decode_tsrange_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             [1] = {
@@ -669,8 +650,7 @@ function testcase.decode_tsmrange_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -712,8 +692,7 @@ function testcase.decode_bytea_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         '\\x1234',
         '\\x5678',
@@ -734,8 +713,7 @@ function testcase.decode_bit_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             110,
@@ -760,8 +738,7 @@ function testcase.decode_tsvector_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -809,8 +786,7 @@ function testcase.decode_point_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             1.5,
@@ -837,8 +813,7 @@ function testcase.decode_line_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             1.5,
@@ -867,8 +842,7 @@ function testcase.decode_lseg_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -907,8 +881,7 @@ function testcase.decode_box_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -947,8 +920,7 @@ function testcase.decode_path_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -987,8 +959,7 @@ function testcase.decode_polygon_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             {
@@ -1035,8 +1006,7 @@ function testcase.decode_circle_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             1.5,
@@ -1065,8 +1035,7 @@ function testcase.decode_text_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         'foo bar',
         'baz_qux',
@@ -1088,8 +1057,7 @@ function testcase.decode_json_array()
     local rows = assert(res:rows())
     assert(rows:next())
     local field, val = assert(rows:read())
-    local v = assert(decoder:decode_by_oid(field.type, val))
-    res:close()
+    local v = assert(decoder:decode_by_oid(field.type_oid, val))
     assert.equal(v, {
         {
             a = 1,
