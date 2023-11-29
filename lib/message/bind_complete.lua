@@ -42,10 +42,12 @@ local function decode(s)
     --   Int32(4)
     --     Length of message contents in bytes, including self.
     --
-    if #s < 5 then
+    if #s < 1 then
         return nil, nil, true
     elseif sub(s, 1, 1) ~= '2' then
         return nil, errorf('invalid BindComplete message')
+    elseif #s < 5 then
+        return nil, nil, true
     end
 
     local len = ntohl(sub(s, 2))
