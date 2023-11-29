@@ -23,6 +23,7 @@
 local sub = string.sub
 local errorf = require('error').format
 local ntohl = require('postgres.ntohl')
+local htonl = require('postgres.htonl')
 
 --- @class postgres.message.backend_key_data : postgres.message
 --- @field pid integer
@@ -73,6 +74,15 @@ local function decode(s)
     return msg
 end
 
+--- encode
+--- @param pid integer
+--- @param key integer
+--- @return string
+local function encode(pid, key)
+    return 'K' .. htonl(12) .. htonl(pid) .. htonl(key)
+end
+
 return {
+    encode = encode,
     decode = decode,
 }
