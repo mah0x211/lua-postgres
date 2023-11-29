@@ -52,10 +52,12 @@ local function decode(s)
     --   Int32
     --     The secret key of this backend.
     --
-    if #s < 5 then
+    if #s < 1 then
         return nil, nil, true
     elseif sub(s, 1, 1) ~= 'K' then
         return nil, errorf('invalid BackendKeyData message')
+    elseif #s < 5 then
+        return nil, nil, true
     end
 
     local len = ntohl(sub(s, 2))
