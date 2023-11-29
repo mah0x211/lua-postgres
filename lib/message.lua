@@ -85,6 +85,7 @@ return {
     encode = {
         authentication = require('postgres.message.authentication').encode,
         backend_key_data = require('postgres.message.backend_key_data').encode,
+        bind_complete = require('postgres.message.bind_complete').encode,
         bind = require('postgres.message.bind').encode,
         cancel_request = require('postgres.message.cancel_request').encode,
         close_portal = require('postgres.message.close_portal').encode,
