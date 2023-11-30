@@ -105,6 +105,7 @@ return {
         authentication = require('postgres.message.authentication').decode,
         backend_key_data = require('postgres.message.backend_key_data').decode,
         bind_complete = require('postgres.message.bind_complete').decode,
+        bind = require('postgres.message.bind').decode,
         close_complete = require('postgres.message.close_complete').decode,
         command_complete = require('postgres.message.command_complete').decode,
         data_row = require('postgres.message.data_row').decode,
