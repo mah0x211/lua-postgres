@@ -345,6 +345,9 @@ local function encode(portal, stmt, values)
     }
     tbl[#tbl + 1] = htons(#values) -- number of parameter values
     for i = 1, #values do
+        if type(values[i]) ~= 'string' then
+            error(format('values#%d must be string', i))
+        end
         tbl[#tbl + 1] = htonl(#values[i])
         tbl[#tbl + 1] = values[i]
     end
