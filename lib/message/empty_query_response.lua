@@ -29,7 +29,7 @@ local EmptyQueryResponse = require('metamodule').new({}, 'postgres.message')
 
 --- decode
 --- @param s string
---- @return table? msg
+--- @return postgres.message.empty_query_response? msg
 --- @return any err
 --- @return boolean? again
 local function decode(s)
@@ -42,19 +42,22 @@ local function decode(s)
     --   Int32(4)
     --     Length of message contents in bytes, including self.
     --
-    if #s < 5 then
+    if #s < 1 then
         return nil, nil, true
     elseif sub(s, 1, 1) ~= 'I' then
         return nil, errorf('invalid EmptyQueryResponse message')
+    elseif #s < 5 then
+        return nil, nil, true
     end
 
     local len = ntohl(sub(s, 2))
     if len ~= 4 then
-        return nil, errorf('invalid EmptyQueryResponse message')
+        return nil,
+               errorf('invalid EmptyQueryResponse message: length must be 4')
     end
 
     local msg = EmptyQueryResponse()
-    msg.consumed = len + 1
+    msg.consumed = len + 1 -- +1 for the Byte1 field
     msg.type = 'EmptyQueryResponse'
     return msg
 end
