@@ -24,7 +24,7 @@ local type = type
 local errorf = require('error').format
 local new_inet_client = require('net.stream.inet').client.new
 local parse_conninfo = require('postgres.conninfo')
-local encode_cancel_request = require('postgres.message.cancel_request').encode
+local encode_cancel_request = require('postgres.message').encode.cancel_request
 local decode_message = require('postgres.message').decode
 
 --- @class postgres.cancel
