@@ -24,6 +24,7 @@ local sub = string.sub
 local gmatch = string.gmatch
 local errorf = require('error').format
 local ntohl = require('postgres.ntohl')
+local unpack = require('postgres.unpack')
 
 --- @class postgres.message.command_complete : postgres.message
 --- @field tag string
@@ -82,20 +83,28 @@ local function decode(s)
     --   rows copied. (Note: the row count appears only in PostgreSQL 8.2 and
     --   later.)
     --
-    if #s < 5 then
+    if #s < 1 then
         return nil, nil, true
     elseif sub(s, 1, 1) ~= 'C' then
         return nil, errorf('invalid CommandComplete message')
-    end
-
-    local len = ntohl(sub(s, 2))
-    local consumed = len + 1
-    if #s < consumed then
+    elseif #s < 5 then
         return nil, nil, true
     end
 
+    local len = ntohl(sub(s, 2))
+    if len < 5 then
+        return nil, errorf(
+                   'invalid CommandComplete message: length is not greater than 4')
+    end
+
+    local v = {}
+    local consumed, err = unpack(v, 'b1Ls', s)
+    if err then
+        return nil, errorf('invalid CommandComplete message: %s', err)
+    end
+
     -- split tag with spaces
-    local tag = sub(s, 6, consumed - 1)
+    local tag = v[3]
     local words = {}
     for word in gmatch(tag, '%S+') do
         words[#words + 1] = word
