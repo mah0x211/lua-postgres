@@ -23,6 +23,7 @@
 local sub = string.sub
 local errorf = require('error').format
 local ntohl = require('postgres.ntohl')
+local htonl = require('postgres.htonl')
 
 --- @class postgres.message.close_complete : postgres.message
 local CloseComplete = require('metamodule').new({}, 'postgres.message')
@@ -58,6 +59,13 @@ local function decode(s)
     return msg
 end
 
+--- encode
+--- @return string s
+local function encode()
+    return '3' .. htonl(4)
+end
+
 return {
+    encode = encode,
     decode = decode,
 }
