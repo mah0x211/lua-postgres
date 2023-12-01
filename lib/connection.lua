@@ -633,11 +633,11 @@ function Connection:extended_query(query, values, max_rows)
         --  * NoticeResponse
         encode_message.execute(''), -- unnamed portal
 
-        -- close_statement
+        -- close statement
         -- the possible responses are:
         --  * CloseComplete
         --  * ErrorResponse
-        encode_message.close_statement(''), -- unnamed statement
+        encode_message.close('statement', ''), -- unnamed statement
 
         -- sync
         -- the possible responses are:
