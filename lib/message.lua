@@ -22,6 +22,7 @@
 --- assign to local
 local sub = string.sub
 local errorf = require('error').format
+local setmetatable = setmetatable
 
 --- @class postgres.message
 --- @field consumed integer?
@@ -82,6 +83,7 @@ end
 
 return {
     encode = {
+        authentication = require('postgres.message.authentication').encode,
         bind = require('postgres.message.bind').encode,
         cancel_request = require('postgres.message.cancel_request').encode,
         close_portal = require('postgres.message.close_portal').encode,
@@ -97,5 +99,28 @@ return {
         sync = require('postgres.message.sync').encode,
         terminate = require('postgres.message.terminate').encode,
     },
-    decode = decode,
+    decode = setmetatable({
+        authentication = require('postgres.message.authentication').decode,
+        backend_key_data = require('postgres.message.backend_key_data').decode,
+        bind_complete = require('postgres.message.bind_complete').decode,
+        close_complete = require('postgres.message.close_complete').decode,
+        command_complete = require('postgres.message.command_complete').decode,
+        data_row = require('postgres.message.data_row').decode,
+        empty_query_response = require('postgres.message.empty_query_response').decode,
+        error_response = require('postgres.message.error_response').decode,
+        negotiation_protocol_version = require(
+            'postgres.message.negotiation_protocol_version').decode,
+        notification_response = require('postgres.message.notification_response').decode,
+        no_data = require('postgres.message.no_data').decode,
+        parameter_description = require('postgres.message.parameter_description').decode,
+        parameter_status = require('postgres.message.parameter_status').decode,
+        parse_complete = require('postgres.message.parse_complete').decode,
+        portal_suspended = require('postgres.message.portal_suspended').decode,
+        ready_for_query = require('postgres.message.ready_for_query').decode,
+        row_description = require('postgres.message.row_description').decode,
+    }, {
+        __call = function(_, ...)
+            return decode(...)
+        end,
+    }),
 }

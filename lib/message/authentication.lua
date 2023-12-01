@@ -22,7 +22,10 @@
 --- assign to local
 local sub = string.sub
 local errorf = require('error').format
-local ntohl = require('postgres.ntohl')
+local unpack = require('postgres.unpack')
+local htonl = require('postgres.htonl')
+--- constants
+local NULL = '\0'
 
 --- @class postgres.message.authentication : postgres.message
 --- @field salt string? AuthenticationMD5Password
@@ -36,19 +39,33 @@ local Authentication = require('metamodule').new({}, 'postgres.message')
 --- @return any err
 --- @return boolean? again
 local function decode(s)
-    if #s < 5 then
+    if #s < 1 then
         return nil, nil, true
     elseif sub(s, 1, 1) ~= 'R' then
         return nil, errorf('invalid Authentication message')
     end
 
-    local len = ntohl(sub(s, 2))
-    local consumed = len + 1
-    if #s < consumed then
+    --
+    -- Authentication* Message Header
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32
+    --     Specifies that the authentication status code.
+    --
+    local header = {}
+    local _, err, again = unpack(header, 'b1Li', s)
+    if err then
+        return nil, errorf('invalid Authentication message', err)
+    elseif again then
         return nil, nil, true
     end
-    local code = ntohl(sub(s, 6))
 
+    local len = header[2] + 1
+    local code = header[3]
     local msg = Authentication()
     --
     -- AuthenticationOk (B)
@@ -62,7 +79,7 @@ local function decode(s)
     --     Specifies that the authentication was successful.
     --
     if code == 0 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationOk'
         return msg
     end
@@ -79,7 +96,7 @@ local function decode(s)
     --     Specifies that Kerberos V5 authentication is required.
     --
     if code == 2 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationKerberosV5'
         return msg
     end
@@ -96,7 +113,7 @@ local function decode(s)
     --     Specifies that a clear-text password is required.
     --
     if code == 3 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationCleartextPassword'
         return msg
     end
@@ -116,25 +133,25 @@ local function decode(s)
     --     The salt to use when encrypting the password.
     --
     if code == 5 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationMD5Password'
         msg.salt = sub(s, 10, 13)
         return msg
     end
 
     --
-    -- AuthenticationGSS (B)
+    -- AuthenticationSCMCredential (B)
     --   Byte1('R')
     --     Identifies the message as an authentication request.
     --
     --   Int32(8)
     --     Length of message contents in bytes, including self.
     --
-    --   Int32(7)
-    --     Specifies that GSSAPI authentication is required.
+    --   Int32(6)
+    --     Specifies that an SCM credentials message is required.
     --
     if code == 6 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationSCMCredential'
         return msg
     end
@@ -151,7 +168,7 @@ local function decode(s)
     --     Specifies that GSSAPI authentication is required.
     --
     if code == 7 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationGSS'
         return msg
     end
@@ -171,7 +188,7 @@ local function decode(s)
     --     GSSAPI or SSPI authentication data.
     --
     if code == 8 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationGSSContinue'
         msg.data = sub(s, 10, len)
         return msg
@@ -189,7 +206,7 @@ local function decode(s)
     --     Specifies that SSPI authentication is required.
     --
     if code == 9 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationSSPI'
         return msg
     end
@@ -214,9 +231,9 @@ local function decode(s)
     --     Name of a SASL authentication mechanism.
     --
     if code == 10 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationSASL'
-        msg.name = sub(s, 10, len)
+        msg.name = sub(s, 10, len - 1)
         return msg
     end
 
@@ -235,7 +252,7 @@ local function decode(s)
     --     SASL data, specific to the SASL mechanism being used.
     --
     if code == 11 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationSASLContinue'
         msg.data = sub(s, 10, len)
         return msg
@@ -257,15 +274,236 @@ local function decode(s)
     --     used.
     --
     if code == 12 then
-        msg.consumed = consumed
+        msg.consumed = len
         msg.type = 'AuthenticationSASLFinal'
         msg.data = sub(s, 10, len)
         return msg
     end
 
-    return nil, errorf('unknown Authentication message')
+    return nil, errorf('unsupported Authentication message')
+end
+
+--- encode
+--- @param auth string
+---| '"AuthenticationOk"' # AuthenticationOk (B)
+---| '"AuthenticationCleartextPassword"' # AuthenticationCleartextPassword (B)
+---| '"AuthenticationMD5Password"' # AuthenticationMD5Password (B)
+---| '"AuthenticationSCMCredential"' # AuthenticationSCMCredential (B)
+---| '"AuthenticationGSS"' # AuthenticationGSS (B)
+---| '"AuthenticationGSSContinue"' # AuthenticationGSSContinue (B)
+---| '"AuthenticationSSPI"' # AuthenticationSSPI (B)
+---| '"AuthenticationSASL"' # AuthenticationSASL (B)
+---| '"AuthenticationSASLContinue"' # AuthenticationSASLContinue (B)
+---| '"AuthenticationSASLFinal"' # AuthenticationSASLFinal (B)
+--- @param ... string
+--- @return string
+local function encode(auth, ...)
+    assert(type(auth) == 'string', 'portal must be string')
+
+    --
+    -- AuthenticationOk (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32(8)
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(0)
+    --     Specifies that the authentication was successful.
+    --
+    if auth == 'AuthenticationOk' then
+        return 'R' .. htonl(8) .. htonl(0)
+    end
+
+    --
+    -- AuthenticationKerberosV5 (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32(8)
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(2)
+    --     Specifies that Kerberos V5 authentication is required.
+    --
+    if auth == 'AuthenticationKerberosV5' then
+        return 'R' .. htonl(8) .. htonl(2)
+    end
+
+    --
+    -- AuthenticationCleartextPassword (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32(8)
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(3)
+    --     Specifies that a clear-text password is required.
+    --
+    if auth == 'AuthenticationCleartextPassword' then
+        return 'R' .. htonl(8) .. htonl(3)
+    end
+
+    --
+    -- AuthenticationMD5Password (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32(12)
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(5)
+    --     Specifies that an MD5-encrypted password is required.
+    --
+    --   Byte4
+    --     The salt to use when encrypting the password.
+    --
+    if auth == 'AuthenticationMD5Password' then
+        local salt = ...
+        assert(type(salt) == 'string' and #salt == 4,
+               'argument#2 salt must be 4 bytes string')
+        return 'R' .. htonl(12) .. htonl(5) .. salt
+    end
+
+    --
+    -- AuthenticationSCMCredential (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32(8)
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(6)
+    --     Specifies that an SCM credentials message is required.
+    --
+    if auth == 'AuthenticationSCMCredential' then
+        return 'R' .. htonl(8) .. htonl(6)
+    end
+
+    --
+    -- AuthenticationGSS (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32(8)
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(7)
+    --     Specifies that GSSAPI authentication is required.
+    --
+    if auth == 'AuthenticationGSS' then
+        return 'R' .. htonl(8) .. htonl(7)
+    end
+
+    --
+    -- AuthenticationGSSContinue (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(8)
+    --     Specifies that this message contains GSSAPI or SSPI data.
+    --
+    --   Byten
+    --     GSSAPI or SSPI authentication data.
+    --
+    if auth == 'AuthenticationGSSContinue' then
+        local data = ...
+        assert(type(data) == 'string',
+               'argument#2 GSSAPI or SSPI data must be string')
+        return 'R' .. htonl(#data + 8) .. htonl(8) .. data
+    end
+
+    --
+    -- AuthenticationSSPI (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32(8)
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(9)
+    --     Specifies that SSPI authentication is required.
+    --
+    if auth == 'AuthenticationSSPI' then
+        return 'R' .. htonl(8) .. htonl(9)
+    end
+
+    --
+    -- AuthenticationSASL (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(10)
+    --     Specifies that SASL authentication is required.
+    --
+    -- The message body is a list of SASL authentication mechanisms, in the
+    -- server's order of preference. A zero byte is required as terminator after
+    -- the last authentication mechanism name. For each mechanism, there is the
+    -- following:
+    --
+    --   String
+    --     Name of a SASL authentication mechanism.
+    --
+    if auth == 'AuthenticationSASL' then
+        local name = ...
+        assert(type(name) == 'string',
+               'argument#2 SASL authentication mechanism name must be string')
+        return 'R' .. htonl(#name + 9) .. htonl(10) .. name .. NULL
+    end
+
+    --
+    -- AuthenticationSASLContinue (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(11)
+    --     Specifies that this message contains a SASL challenge.
+    --
+    --   Byten
+    --     SASL data, specific to the SASL mechanism being used.
+    --
+    if auth == 'AuthenticationSASLContinue' then
+        local data = ...
+        assert(type(data) == 'string', 'argument#2 SASL data must be string')
+        return 'R' .. htonl(#data + 8) .. htonl(11) .. data
+    end
+
+    --
+    -- AuthenticationSASLFinal (B)
+    --   Byte1('R')
+    --     Identifies the message as an authentication request.
+    --
+    --   Int32
+    --     Length of message contents in bytes, including self.
+    --
+    --   Int32(12)
+    --     Specifies that SASL authentication has completed.
+    --
+    --   Byten
+    --     SASL outcome "additional data", specific to the SASL mechanism being
+    --     used.
+    --
+    if auth == 'AuthenticationSASLFinal' then
+        local data = ...
+        assert(type(data) == 'string',
+               'argument#2 SASL outcome "additional data" must be string')
+        return 'R' .. htonl(#data + 8) .. htonl(12) .. data
+    end
+
+    error(errorf('unsupported Authentication message: %q', auth))
 end
 
 return {
+    encode = encode,
     decode = decode,
 }
