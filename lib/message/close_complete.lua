@@ -28,29 +28,32 @@ local htonl = require('postgres.htonl')
 --- @class postgres.message.close_complete : postgres.message
 local CloseComplete = require('metamodule').new({}, 'postgres.message')
 
+--
+-- CloseComplete (B)
+--   Byte1('3')
+--     Identifies the message as a Close-complete indicator.
+--
+--   Int32(4)
+--     Length of message contents in bytes, including self.
+--
+
 --- decode
 --- @param s string
---- @return table? msg
+--- @return postgres.message.close_complete? msg
 --- @return any err
 --- @return boolean? again
 local function decode(s)
-    --
-    -- CloseComplete (B)
-    --   Byte1('3')
-    --     Identifies the message as a Close-complete indicator.
-    --
-    --   Int32(4)
-    --     Length of message contents in bytes, including self.
-    --
-    if #s < 5 then
+    if #s < 1 then
         return nil, nil, true
     elseif sub(s, 1, 1) ~= '3' then
         return nil, errorf('invalid CloseComplete message')
+    elseif #s < 5 then
+        return nil, nil, true
     end
 
     local len = ntohl(sub(s, 2))
     if len ~= 4 then
-        return nil, errorf('invalid CloseComplete message')
+        return nil, errorf('invalid CloseComplete message: length must be 4')
     end
 
     local msg = CloseComplete()
