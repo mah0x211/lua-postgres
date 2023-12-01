@@ -620,7 +620,7 @@ function Connection:extended_query(query, values, max_rows)
         --  * RowDescription
         --  * NoData
         --  * ErrorResponse
-        encode_message.describe_portal(''), -- unnamed portal
+        encode_message.describe('portal', ''), -- unnamed portal
 
         -- execute portal
         -- the possible responses are:

@@ -90,8 +90,7 @@ return {
         cancel_request = require('postgres.message.cancel_request').encode,
         close_complete = require('postgres.message.close_complete').encode,
         close = require('postgres.message.close').encode,
-        describe_portal = require('postgres.message.describe_portal').encode,
-        describe_statement = require('postgres.message.describe_statement').encode,
+        describe = require('postgres.message.describe').encode,
         execute = require('postgres.message.execute').encode,
         flush = require('postgres.message.flush').encode,
         parse = require('postgres.message.parse').encode,
@@ -111,6 +110,7 @@ return {
         close = require('postgres.message.close').decode,
         command_complete = require('postgres.message.command_complete').decode,
         data_row = require('postgres.message.data_row').decode,
+        describe = require('postgres.message.describe').decode,
         empty_query_response = require('postgres.message.empty_query_response').decode,
         error_response = require('postgres.message.error_response').decode,
         negotiation_protocol_version = require(
