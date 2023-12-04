@@ -28,6 +28,15 @@ function testcase.close()
     assert.is_nil(timeout)
 end
 
+function testcase.get_cancel()
+    local c = assert(new_connection())
+
+    -- test that get a cancel object
+    local cancel, err = c:get_cancel()
+    assert.is_nil(err)
+    assert.match(cancel, '^postgres%.canceler: ', false)
+end
+
 function testcase.replace_named_params()
     local c = assert(new_connection())
 
@@ -102,7 +111,7 @@ end
 function testcase.empty_query()
     local c = assert(new_connection())
 
-    -- test that send multiple queries and get messages
+    -- test that empty query
     local msg, err, timeout = c:query('')
     assert.match(msg, '^postgres%.message%.empty_query_response: ', false)
     assert.is_nil(err)
