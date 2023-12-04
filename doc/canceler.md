@@ -1,11 +1,11 @@
-# postgres.cancel
+# postgres.canceler
 
-defined in [postgres.cancel](../lib/cancel.lua) module.
+defined in [postgres.canceler](../lib/canceler.lua) module.
 
 
-## cancel = cancel.new( conninfo, pid, key )
+## cancel = canceler.new( conninfo, pid, key )
 
-create a new `postgres.cancel` object.
+create a new `postgres.canceler` object.
 
 **Parameters**
 
@@ -15,10 +15,11 @@ create a new `postgres.cancel` object.
 
 **Returns**
 
-- `cancel:postgres.cancel`: the `postgres.cancel` object.
+- `cancel:postgres.canceler`: the `postgres.canceler` object.
+- `err:any`: error message.
 
 
-## ok, err, timeout = cancel:cancel()
+## ok, err, timeout = canceler:cancel()
 
 send a `CancelRequest` message to the server.
 
