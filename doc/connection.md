@@ -53,11 +53,11 @@ get the connection uri string.
 
 ## cancel, err = connection:get_cancel()
 
-get the [postgres.cancel](cancel.md) object.
+get the [postgres.canceler](canceler.md) object.
 
 **Returns**
 
-- `cancel:postgres.cancel`: `postgres.cancel` object.
+- `cancel:postgres.canceler`: `postgres.canceler` object.
 - `err:any`: the error object.
 
 
