@@ -21,9 +21,34 @@
 --
 --- assign to local
 local sub = string.sub
+local rep = string.rep
 local errorf = require('error').format
-local ntohl = require('postgres.ntohl')
-local ntohs = require('postgres.ntohs')
+local unpack = require('postgres.unpack')
+--- constants
+local NULL = '\0'
+
+--
+-- DataRow (B)
+--   Byte1('D')
+--     Identifies the message as a data row.
+--
+--   Int32
+--     Length of message contents in bytes, including self.
+--
+--   Int16
+--     The number of column values that follow (possibly zero).
+--
+--   Next, the following pair of fields appear for each column:
+--
+--   Int32
+--     The length of the column value, in bytes (this count does not include
+--     itself). Can be zero. As a special case, -1 indicates a NULL column
+--     value. No value bytes follow in the NULL case.
+--
+--   Byten
+--     The value of the column, in the format indicated by the associated
+--     format code. n is the above length.
+--
 
 --- @class postgres.message.data_row : postgres.message
 --- @field values string[]
@@ -31,12 +56,20 @@ local DataRow = require('metamodule').new({}, 'postgres.message')
 
 --- decode
 --- @param s string
---- @return table? msg
+--- @return postgres.message.data_row? msg
 --- @return any err
 --- @return boolean? again
 local function decode(s)
+    if #s < 1 then
+        return nil, nil, true
+    elseif sub(s, 1, 1) ~= 'D' then
+        return nil, errorf('invalid DataRow message')
+    elseif #s < 5 then
+        return nil, nil, true
+    end
+
     --
-    -- DataRow (B)
+    -- decode the following fields
     --   Byte1('D')
     --     Identifies the message as a data row.
     --
@@ -45,6 +78,29 @@ local function decode(s)
     --
     --   Int16
     --     The number of column values that follow (possibly zero).
+    --
+    local v = {}
+    local consumed, err, again = unpack(v, 'b1Lh', s)
+    if err then
+        return nil, errorf('invalid DataRow message', err)
+    elseif again then
+        if v[2] < 6 then
+            return nil, errorf(
+                       'invalid DataRow message: length is not greater than 5')
+        end
+        return nil, nil, true
+    end
+
+    local msg = DataRow()
+    msg.consumed = v[2] + 1 -- +1 for the Byte1 field
+    msg.type = 'DataRow'
+    msg.values = {}
+
+    -- extract remaining message body
+    s = sub(s, consumed + 1, msg.consumed)
+
+    --
+    -- convert column values
     --
     --   Next, the following pair of fields appear for each column:
     --
@@ -57,42 +113,46 @@ local function decode(s)
     --     The value of the column, in the format indicated by the associated
     --     format code. n is the above length.
     --
-    if #s < 5 then
-        return nil, nil, true
-    elseif sub(s, 1, 1) ~= 'D' then
-        return nil, errorf('invalid DataRow message')
-    end
+    local ncol = v[3]
+    if ncol < 0 then
+        return nil, errorf(
+                   'invalid DataRow message: number of column values is not greater than or equal to 0')
+    elseif ncol > 0 then
+        v = {}
+        local _
+        consumed, _, again = unpack(v, rep('ib*', ncol), s)
+        if again then
+            return nil, errorf(
+                       'invalid DataRow message: message length is not enough to decode column values')
+        end
+        s = sub(s, consumed + 1)
 
-    local len = ntohl(sub(s, 2))
-    local consumed = len + 1
-    if #s < consumed then
-        return nil, nil, true
-    end
-
-    local ncol = ntohs(sub(s, 6))
-    local values = {}
-    local head = 8
-    for i = 1, ncol do
-        -- length of the column value
-        local vlen = ntohl(sub(s, head))
-        head = head + 4
-        if vlen == -1 then
-            values[i] = 'NULL'
-        else
-            -- non-null column value
-            local tail = head + vlen - 1
-            if tail > consumed then
-                return nil, errorf('invalid DataRow message')
+        local values = msg.values
+        local k = 1
+        for i = 1, #v, 2 do
+            if v[i] < -1 then
+                return nil,
+                       errorf(
+                           'invalid DataRow message: column value#%d length %d is not supported',
+                           i, v[i])
+            elseif v[i] == -1 then
+                values[k] = NULL
+            elseif v[i] == 0 then
+                values[k] = ''
+            else
+                values[k] = v[i + 1]
             end
-            values[i] = sub(s, head, tail)
-            head = tail + 1
+            k = k + 1
         end
     end
 
-    local msg = DataRow()
-    msg.consumed = consumed
-    msg.type = 'DataRow'
-    msg.values = values
+    -- check the remaining message length
+    if #s > 0 then
+        return nil, errorf(
+                   'invalid DataRow message: message length is too long (unknown %d bytes of data remains)',
+                   #s)
+    end
+
     return msg
 end
 

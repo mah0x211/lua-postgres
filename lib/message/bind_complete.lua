@@ -23,6 +23,7 @@
 local sub = string.sub
 local errorf = require('error').format
 local ntohl = require('postgres.ntohl')
+local htonl = require('postgres.htonl')
 
 --- @class postgres.message.bind_complete : postgres.message
 local BindComplete = require('metamodule').new({}, 'postgres.message')
@@ -41,10 +42,12 @@ local function decode(s)
     --   Int32(4)
     --     Length of message contents in bytes, including self.
     --
-    if #s < 5 then
+    if #s < 1 then
         return nil, nil, true
     elseif sub(s, 1, 1) ~= '2' then
         return nil, errorf('invalid BindComplete message')
+    elseif #s < 5 then
+        return nil, nil, true
     end
 
     local len = ntohl(sub(s, 2))
@@ -58,6 +61,13 @@ local function decode(s)
     return msg
 end
 
+--- encode
+--- @return string msg
+local function encode()
+    return '2' .. htonl(4)
+end
+
 return {
     decode = decode,
+    encode = encode,
 }

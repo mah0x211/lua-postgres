@@ -99,6 +99,7 @@ local HOSTPATHSPEC = {
     -- pathspec
     dbname = true,
 }
+
 --- parse_conninfo
 --- @param conninfo string
 --- @return table? info
@@ -112,19 +113,23 @@ local function parse_conninfo(conninfo)
     if conninfo ~= '' then
         if not find(conninfo, '^postgres://') and
             not find(conninfo, '^postgresql://') then
-            error('invalid connection string')
+            return nil,
+                   errorf(
+                       'invalid connection string: scheme must be start with ' ..
+                           '"postgres://" or "postgresql://"')
         end
 
-        -- parse URI
+        -- parse connection string as URL
         local uri, pos, err = parse_url(conninfo, true)
         if err then
-            return nil, errorf(
-                       'invalid connection-uri character %q found at %d', err,
-                       pos + 1)
+            return nil, errorf('invalid URL: illegal character %q found at %d',
+                               err, pos + 1)
         end
+
         -- userspec
         info.user = uri.user
         info.password = uri.password
+        info.dbname = info.user
         -- hostspec
         info.host = uri.hostname
         info.port = uri.port
@@ -135,15 +140,15 @@ local function parse_conninfo(conninfo)
         -- paramspec
         if uri.query_params then
             params = uri.query_params
-        end
-
-        -- overwrite with query parameters
-        for k in pairs(HOSTPATHSPEC) do
-            local v = params[k]
-            if v then
-                info[k] = v[#v]
-                -- remove from params
-                params[k] = nil
+            -- use the last value
+            for k, v in pairs(params) do
+                params[k] = v[#v]
+                -- overwrite with query parameters
+                if HOSTPATHSPEC[k] then
+                    info[k] = params[k]
+                    -- remove from params
+                    params[k] = nil
+                end
             end
         end
     end
@@ -177,7 +182,7 @@ local function parse_conninfo(conninfo)
     -- * require_auth (comma-separated list of authentication methods)
     -- * channel_binding (validate)
     -- * sslrootcert (file path)
-    -- * ssmode (validate)
+    -- * sslmode (validate)
     -- * ssl_min_protocol_version (validate)
     -- * ssl_max_protocol_version (validate)
     -- * ssl_cert_mode (validate)
@@ -185,7 +190,6 @@ local function parse_conninfo(conninfo)
     -- * target_session_attrs (validate)
     -- * load_balance_hosts (validate)
     -- * client_encoding (validate)
-
     if params.connect_timeout then
         params.connect_timeout = tonumber(params.connect_timeout)
         if not params.connect_timeout then

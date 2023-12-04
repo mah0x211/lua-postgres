@@ -24,16 +24,16 @@ local type = type
 local errorf = require('error').format
 local new_inet_client = require('net.stream.inet').client.new
 local parse_conninfo = require('postgres.conninfo')
-local encode_cancel_request = require('postgres.message.cancel_request').encode
+local encode_cancel_request = require('postgres.message').encode.cancel_request
 local decode_message = require('postgres.message').decode
 
---- @class postgres.cancel
+--- @class postgres.canceler
 --- @field private msg string cancel message
 --- @field conninfo string
 --- @field params table
 --- @field pid integer process ID of the target backend
 --- @field key integer secret key for the target backend
-local Cancel = {}
+local Canceler = {}
 
 --- init
 --- @param conninfo string
@@ -41,7 +41,7 @@ local Cancel = {}
 --- @param key integer secret key for the target backend
 --- @return postgres.cancel
 --- @return any err
-function Cancel:init(conninfo, pid, key)
+function Canceler:init(conninfo, pid, key)
     assert(type(conninfo) == 'string', 'conninfo must be string')
     assert(type(pid) == 'number', 'pid must be integer')
     assert(type(key) == 'number', 'key must be integer')
@@ -64,7 +64,7 @@ end
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Cancel:cancel()
+function Canceler:cancel()
     -- connect to server
     local host = self.uri.params.hostaddr or self.uri.host
     local sock, err, timeout = new_inet_client(host, self.uri.port, {
@@ -111,6 +111,6 @@ function Cancel:cancel()
 end
 
 return {
-    new = require('metamodule').new(Cancel),
+    new = require('metamodule').new(Canceler),
 }
 

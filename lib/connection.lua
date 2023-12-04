@@ -30,7 +30,7 @@ local errorf = require('error').format
 local unpack = require('unpack')
 local new_inet_client = require('net.stream.inet').client.new
 local parse_conninfo = require('postgres.conninfo')
-local new_cancel = require('postgres.cancel').new
+local new_canceler = require('postgres.canceler').new
 local encode_message = require('postgres.message').encode
 local decode_message = require('postgres.message').decode
 --- constants
@@ -149,7 +149,7 @@ function Connection:startup()
     --  * AuthenticationSASLFinal
     --  * NegotiateProtocolVersion
     --  * ErrorResponse
-    local len, err, timeout = self:send(encode_message.startup_message({
+    local ok, err, timeout = self:send(encode_message.startup_message({
         user = self.uri.user,
         database = self.uri.dbname,
         application_name = self.uri.params.application_name,
@@ -158,7 +158,7 @@ function Connection:startup()
         timezone = self.uri.params.timezone,
         geqo = self.uri.params.geqo,
     }))
-    if not len then
+    if not ok then
         return false, err, timeout
     end
 
@@ -220,8 +220,8 @@ end
 --- @return boolean? timeout
 function Connection:password_message(pswd)
     assert(type(pswd) == 'string', 'pswd must be string')
-    local len, err, timeout = self:send(encode_message.password_message(pswd))
-    if not len then
+    local ok, err, timeout = self:send(encode_message.password_message(pswd))
+    if not ok then
         return nil, err, timeout
     end
 
@@ -320,14 +320,14 @@ function Connection:close(force)
         return true
     end
 
-    local len, err, timeout
+    local ok, err, timeout
     if not force then
-        len, err, timeout = self:send(encode_message.terminate())
+        ok, err, timeout = self:send(encode_message.terminate())
     end
 
     self.sock:close()
     self.sock = nil
-    if not force and not len then
+    if not force and not ok then
         -- failed to send terminate message
         return false, err, timeout
     end
@@ -350,8 +350,8 @@ end
 --- @return postgres.cancel cancel
 --- @return any err
 function Connection:get_cancel()
-    return new_cancel(self.conninfo, self.backend_key_data.pid,
-                      self.backend_key_data.key)
+    return new_canceler(self.conninfo, self.backend_key_data.pid,
+                        self.backend_key_data.key)
 end
 
 --- status
@@ -423,8 +423,8 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:flush()
-    local len, err, timeout = self:send(encode_message.flush())
-    if not len then
+    local ok, err, timeout = self:send(encode_message.flush())
+    if not ok then
         return false, err, timeout
     end
     return true
@@ -586,8 +586,8 @@ function Connection:simple_query(query)
     --  * ErrorResponse
     --  * NoticeResponse
     --  * ReadyForQuery
-    local len, err, timeout = self:send(encode_message.query(query))
-    if not len then
+    local ok, err, timeout = self:send(encode_message.query(query))
+    if not ok then
         return nil, err, timeout
     end
     return self:next()
@@ -602,7 +602,7 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:extended_query(query, values, max_rows)
-    local len, err, timeout = self:send(concat({
+    local ok, err, timeout = self:send(concat({
         -- prepare query
         -- the possible responses are:
         --  * ParseComplete
@@ -620,7 +620,7 @@ function Connection:extended_query(query, values, max_rows)
         --  * RowDescription
         --  * NoData
         --  * ErrorResponse
-        encode_message.describe_portal(''), -- unnamed portal
+        encode_message.describe('portal', ''), -- unnamed portal
 
         -- execute portal
         -- the possible responses are:
@@ -633,11 +633,11 @@ function Connection:extended_query(query, values, max_rows)
         --  * NoticeResponse
         encode_message.execute(''), -- unnamed portal
 
-        -- close_statement
+        -- close statement
         -- the possible responses are:
         --  * CloseComplete
         --  * ErrorResponse
-        encode_message.close_statement(''), -- unnamed statement
+        encode_message.close('statement', ''), -- unnamed statement
 
         -- sync
         -- the possible responses are:
@@ -645,7 +645,7 @@ function Connection:extended_query(query, values, max_rows)
         --  * ErrorResponse
         encode_message.sync(),
     }))
-    if not len then
+    if not ok then
         return nil, err, timeout
     end
 

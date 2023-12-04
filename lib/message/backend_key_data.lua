@@ -23,6 +23,7 @@
 local sub = string.sub
 local errorf = require('error').format
 local ntohl = require('postgres.ntohl')
+local htonl = require('postgres.htonl')
 
 --- @class postgres.message.backend_key_data : postgres.message
 --- @field pid integer
@@ -51,10 +52,12 @@ local function decode(s)
     --   Int32
     --     The secret key of this backend.
     --
-    if #s < 5 then
+    if #s < 1 then
         return nil, nil, true
     elseif sub(s, 1, 1) ~= 'K' then
         return nil, errorf('invalid BackendKeyData message')
+    elseif #s < 5 then
+        return nil, nil, true
     end
 
     local len = ntohl(sub(s, 2))
@@ -73,6 +76,15 @@ local function decode(s)
     return msg
 end
 
+--- encode
+--- @param pid integer
+--- @param key integer
+--- @return string
+local function encode(pid, key)
+    return 'K' .. htonl(12) .. htonl(pid) .. htonl(key)
+end
+
 return {
+    encode = encode,
     decode = decode,
 }
