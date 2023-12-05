@@ -20,7 +20,9 @@
 -- THE SOFTWARE.
 --
 --- assign to local
+local find = string.find
 local sub = string.sub
+local concat = table.concat
 local errorf = require('error').format
 local unpack = require('postgres.unpack')
 local htonl = require('postgres.htonl')
@@ -30,12 +32,12 @@ local NULL = '\0'
 --- @class postgres.message.authentication : postgres.message
 --- @field salt string? AuthenticationMD5Password
 --- @field data string? AuthenticationGSSContinue | AuthenticationSASLContinue AuthenticationSASLFinal
---- @field name string? AuthenticationSASL.name
+--- @field names string[]? AuthenticationSASL.names
 local Authentication = require('metamodule').new({}, 'postgres.message')
 
 --- decode
 --- @param s string
---- @return table? msg
+--- @return postgres.message.authentication? msg
 --- @return any err
 --- @return boolean? again
 local function decode(s)
@@ -231,9 +233,23 @@ local function decode(s)
     --     Name of a SASL authentication mechanism.
     --
     if code == 10 then
+        s = sub(s, 10, len)
+        local names = {}
+        local tail = find(s, NULL, 1, true)
+        while tail do
+            names[#names + 1] = sub(s, 1, tail - 1)
+            s = sub(s, tail + 1)
+            tail = find(s, NULL, 1, true)
+        end
+        if #s > 0 then
+            return nil, errorf(
+                       'invalid AuthenticationSASL message: message length is too long (unknown %d bytes of data remains)',
+                       #s)
+        end
+
         msg.consumed = len
         msg.type = 'AuthenticationSASL'
-        msg.name = sub(s, 10, len - 1)
+        msg.names = names
         return msg
     end
 
@@ -452,10 +468,20 @@ local function encode(auth, ...)
     --     Name of a SASL authentication mechanism.
     --
     if auth == 'AuthenticationSASL' then
-        local name = ...
-        assert(type(name) == 'string',
-               'argument#2 SASL authentication mechanism name must be string')
-        return 'R' .. htonl(#name + 9) .. htonl(10) .. name .. NULL
+        local n = select('#', ...)
+        assert(n > 0, 'argument#2 SASL authentication mechanism name required')
+
+        local list = {}
+        for i = 1, n do
+            local name = select(i, ...)
+            assert(type(name) == 'string',
+                   'argument#' .. i + 2 ..
+                       ' SASL authentication mechanism name ' ..
+                       'must be string')
+            list[i] = name
+        end
+        local names = concat(list, NULL) .. NULL
+        return 'R' .. htonl(8 + #names) .. htonl(10) .. names
     end
 
     --

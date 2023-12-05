@@ -145,14 +145,16 @@ end
 
 function testcase.encode_decode_AuthenticationSASL()
     -- test that decode AuthenticationSASL message
-    local name = 'mechanisms'
-    local s = encode('AuthenticationSASL', name)
+    local s = encode('AuthenticationSASL', 'foo', 'bar')
     local msg = assert(decode(s))
     assert.match(msg, 'postgres.message.authentication')
     assert.contains(msg, {
         consumed = #s,
         type = 'AuthenticationSASL',
-        name = name,
+        names = {
+            'foo',
+            'bar',
+        },
     })
 
     -- test that throw error when mechanisms is not string
