@@ -97,6 +97,7 @@ return {
         password_message = require('postgres.message.password_message').encode,
         query = require('postgres.message.query').encode,
         sasl_initial_response = require('postgres.message.sasl_initial_response').encode,
+        sasl_response = require('postgres.message.sasl_response').encode,
         startup_message = require('postgres.message.startup_message').encode,
         sync = require('postgres.message.sync').encode,
         terminate = require('postgres.message.terminate').encode,
