@@ -241,6 +241,17 @@ send the empty query message to the server for testing the connection.
 - `timeout:boolean`: `true` if the operation timed out.
 
 
+## ok, err, timeout = connection:wait_ready()
+
+keep receiving messages until a `ReadyForQuery` message is received.
+
+**Returns**
+
+- `ok:boolean`: `true` if the `ReadyForQuery` message was received successfully.
+- `err:any`: the error object.
+- `timeout:boolean`: `true` if the operation timed out.
+
+
 ## msg, err, timeout = connection:query( qry [, params [, max_rows]] )
 
 executes an SQL query and returns the result.  

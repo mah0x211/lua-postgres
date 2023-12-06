@@ -32,7 +32,7 @@ local DEFAULT_DECODER = require('postgres.decoder').new()
 --- @field fields table RowDescription.fields
 --- @field error string?
 --- @field is_timeout boolean?
---- @field complete table? CommandComplete message
+--- @field complete postgres.message.command_complete?
 local Rows = {}
 
 --- init
@@ -54,44 +54,42 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Rows:close()
-    if not self.conn then
+    local conn = self.conn
+    if not conn then
         return true
     end
 
-    -- remove current row
+    -- remove connection and row
+    self.conn = nil
     self.row = nil
-    -- retrieve ReadyForQuery message
-    while true do
+    -- retrieve CommandComplete message
+    while not self.complete do
         -- the allowed message types are;
         --  * DataRow
         --  * CommandComplete
         --  * ErrorResponse
-        local res, err, timeout = self.conn:recv()
+        local res, err, timeout = conn:recv()
         if not res then
             if err then
                 self.error = errorf('failed to retrieve message: %s', err)
             end
             self.is_timeout = timeout
-            self.conn = nil
             return false, self.error, timeout
         end
 
         if res.type == 'CommandComplete' then
             self.complete = res
-            self.conn = nil
-            return true
         elseif res.type == 'ErrorResponse' then
             self.error = errorf('[%s] %s', res.severity, res.message)
-            self.conn = nil
-            return false, self.error
         elseif res.type ~= 'DataRow' then
             self.error = errorf(
                              'DataRow|CommandComplete|ErrorResponse expected, got %q',
                              res.type)
-            self.conn = nil
-            return false, self.error
         end
     end
+
+    -- retrieve ReadyForQuery message
+    return conn:wait_ready()
 end
 
 --- next retrives the DataRow message
@@ -99,7 +97,8 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Rows:next()
-    if not self.conn then
+    local conn = self.conn
+    if not conn or self.complete or self.error then
         return false
     end
 
@@ -110,7 +109,7 @@ function Rows:next()
     --  * DataRow
     --  * CommandComplete
     --  * ErrorResponse
-    local res, err, timeout = self.conn:recv()
+    local res, err, timeout = conn:recv()
     if not res then
         if err then
             self.error = errorf('failed to retrieve message: %s', err)
@@ -127,17 +126,14 @@ function Rows:next()
         return true
     elseif res.type == 'CommandComplete' then
         self.complete = res
-        self.conn = nil
         return false
     elseif res.type == 'ErrorResponse' then
         self.error = errorf('[%s] %s', res.severity, res.message)
-        self.conn = nil
         return false, self.error
     else
         self.error = errorf(
                          'DataRow|CommandComplete|ErrorResponse expected, got %q',
                          res.type)
-        self.conn = nil
         return false, self.error
     end
 end
