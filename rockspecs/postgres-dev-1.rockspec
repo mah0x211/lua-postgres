@@ -19,7 +19,6 @@ dependencies = {
     "print >= 0.5.0",
     "postgres-decode >= 0.2.0",
     "string-random >= 0.1.0",
-    "time-clock >= 0.4.0",
     "unpack >= 0.1.0",
     "url >= 2.1.0",
     "yyjson >= 0.5.1",
