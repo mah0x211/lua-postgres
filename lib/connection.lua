@@ -47,6 +47,8 @@ local encode_close = encode_message.close
 local encode_sync = encode_message.sync
 local decode_message = require('postgres.message').decode
 local new_scram = require('postgres.scram').new
+local md5pswd = require('postgres.md5pswd')
+
 --- constants
 local INF_POS = math.huge
 local INF_NEG = -math.huge
@@ -195,8 +197,10 @@ function Connection:startup()
             -- authentication required
             if msg.type == 'AuthenticationCleartextPassword' then
                 return self:authentication_cleartext_password()
+            elseif msg.type == 'AuthenticationMD5Password' then
+                return self:authentication_md5_password(msg.salt)
             elseif msg.type == 'AuthenticationSASL' then
-                return self:authentication_sasl(msg)
+                return self:authentication_sasl(msg.mechanisms)
             end
 
             return false,
@@ -231,14 +235,40 @@ function Connection:authentication_cleartext_password()
     return true
 end
 
---- authentication_sasl sends a SASLInitialResponse message
+--- authentication_md_password sends a md5 password message
 --- @private
---- @param msg postgres.message.authentication
+--- @param salt string
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function Connection:authentication_sasl(msg)
-    for _, name in ipairs(msg.mechanisms) do
+function Connection:authentication_md5_password(salt)
+    -- password message
+    -- the possible responses are;
+    --  * AuthenticationOk
+    --  * ErrorResponse
+    local password = md5pswd(self.uri.password, self.uri.user, salt)
+    local msg, err, timeout = self:password_message('md5' .. password)
+    if not msg then
+        return false, err, timeout
+    elseif msg.type == 'ErrorResponse' then
+        self.error_response = msg
+        return false, errorf('[%s] %s', msg.severity, msg.message)
+    elseif msg.type ~= 'AuthenticationOk' then
+        return false, errorf('AuthenticationOk|ErrorResponse expected, got %q',
+                             msg.type)
+    end
+
+    return true
+end
+
+--- authentication_sasl sends a SASLInitialResponse message
+--- @private
+--- @param mechanisms string[]
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:authentication_sasl(mechanisms)
+    for _, name in ipairs(mechanisms) do
         if name == 'SCRAM-SHA-256' then
             local scram = new_scram(self.uri.user, self.uri.password)
             local server_message
@@ -289,20 +319,20 @@ function Connection:authentication_sasl(msg)
                 end
 
                 if recv_msg_type then
-                    local res, err, timeout = self:recv()
-                    if not res then
+                    local msg, err, timeout = self:recv()
+                    if not msg then
                         return false, err, timeout
-                    elseif res.type == 'ErrorResponse' then
-                        self.error_response = res
+                    elseif msg.type == 'ErrorResponse' then
+                        self.error_response = msg
                         return false,
-                               errorf('[%s] %s', res.severity, res.message)
-                    elseif res.type ~= recv_msg_type then
+                               errorf('[%s] %s', msg.severity, msg.message)
+                    elseif msg.type ~= recv_msg_type then
                         return false, errorf(
                                    recv_msg_type ..
                                        '|ErrorResponse expected, got %q',
-                                   res.type)
+                                   msg.type)
                     end
-                    server_message = res.data
+                    server_message = msg.data
                 end
             end
             return true
@@ -310,7 +340,7 @@ function Connection:authentication_sasl(msg)
     end
 
     return false,
-           errorf('unsupported SASL mechanism: %q', concat(msg.names, ', '))
+           errorf('unsupported SASL mechanism: %q', concat(mechanisms, ', '))
 end
 
 --- password_message sends a postgres.message.password_message message
