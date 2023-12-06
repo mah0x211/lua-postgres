@@ -67,7 +67,6 @@ please see [doc/README.md](doc/README.md).
 - Copy query
 - Unix domain socket connection
 - SSL connection
-- MD5 password authentication
 - SCRAM-SHA-256-PLUS authentication
 - GSSAPI authentication
 - SSPI authentication
