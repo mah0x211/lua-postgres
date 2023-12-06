@@ -33,9 +33,12 @@ modules = {
     ["postgres.message.query"] = "lib/message/query.lua",
     ["postgres.message.ready_for_query"] = "lib/message/ready_for_query.lua",
     ["postgres.message.row_description"] = "lib/message/row_description.lua",
+    ["postgres.message.sasl_initial_response"] = "lib/message/sasl_initial_response.lua",
+    ["postgres.message.sasl_response"] = "lib/message/sasl_response.lua",
     ["postgres.message.startup_message"] = "lib/message/startup_message.lua",
     ["postgres.message.sync"] = "lib/message/sync.lua",
     ["postgres.message.terminate"] = "lib/message/terminate.lua",
     ["postgres.pool"] = "lib/pool.lua",
     ["postgres.rows"] = "lib/rows.lua",
+    ["postgres.scram"] = "lib/scram.lua",
 }
