@@ -30,17 +30,6 @@ local setmetatable = setmetatable
 --- @field type string
 local Message = {}
 
---- next retrieves the next message from the connection.
---- @return postgres.message? msg
---- @return any err
---- @return boolean? timeout
-function Message:next()
-    if not self.conn then
-        return nil
-    end
-    return self.conn:next()
-end
-
 require('metamodule').new(Message)
 
 local DECODER = {
