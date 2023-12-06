@@ -32,7 +32,21 @@ local new_inet_client = require('net.stream.inet').client.new
 local parse_conninfo = require('postgres.conninfo')
 local new_canceler = require('postgres.canceler').new
 local encode_message = require('postgres.message').encode
+local encode_startup_message = encode_message.startup_message
+local encode_terminate = encode_message.terminate
+local encode_flush = encode_message.flush
+local encode_password_message = encode_message.password_message
+local encode_sasl_initial_response = encode_message.sasl_initial_response
+local encode_sasl_response = encode_message.sasl_response
+local encode_query = encode_message.query
+local encode_parse = encode_message.parse
+local encode_bind = encode_message.bind
+local encode_describe = encode_message.describe
+local encode_execute = encode_message.execute
+local encode_close = encode_message.close
+local encode_sync = encode_message.sync
 local decode_message = require('postgres.message').decode
+local new_scram = require('postgres.scram').new
 --- constants
 local INF_POS = math.huge
 local INF_NEG = -math.huge
@@ -149,7 +163,7 @@ function Connection:startup()
     --  * AuthenticationSASLFinal
     --  * NegotiateProtocolVersion
     --  * ErrorResponse
-    local ok, err, timeout = self:send(encode_message.startup_message({
+    local ok, err, timeout = self:send(encode_startup_message({
         user = self.uri.user,
         database = self.uri.dbname,
         application_name = self.uri.params.application_name,
@@ -178,12 +192,17 @@ function Connection:startup()
                 return true
             end
 
+            -- authentication required
             if msg.type == 'AuthenticationCleartextPassword' then
                 return self:authentication_cleartext_password()
+            elseif msg.type == 'AuthenticationSASL' then
+                return self:authentication_sasl(msg)
             end
+
             return false,
                    errorf('unsuppported authentication type: %q', msg.type)
         end
+        -- ignore NegotiateProtocolVersion message
     end
 end
 
@@ -212,6 +231,88 @@ function Connection:authentication_cleartext_password()
     return true
 end
 
+--- authentication_sasl sends a SASLInitialResponse message
+--- @private
+--- @param msg postgres.message.authentication
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:authentication_sasl(msg)
+    for _, name in ipairs(msg.mechanisms) do
+        if name == 'SCRAM-SHA-256' then
+            local scram = new_scram(self.uri.user, self.uri.password)
+            local server_message
+            for _, step in ipairs({
+                'SASLInitialResponse',
+                'AuthenticationSASLContinue',
+                'SASLResponse',
+                'AuthenticationSASLFinal',
+                'VerifyServerSignature',
+                'AuthenticationOk',
+            }) do
+                local send_msg, recv_msg_type
+
+                if step == 'SASLInitialResponse' then
+                    -- send SASLInitialResponse message with SCRAM-SHA-256
+                    send_msg = encode_sasl_initial_response(name,
+                                                            scram:client_first_message())
+                elseif step == 'AuthenticationSASLContinue' then
+                    -- recv AuthenticationSASLContinue message
+                    recv_msg_type = step
+                elseif step == 'SASLResponse' then
+                    -- send SASLResponse message with client-final-message
+                    local message, err =
+                        scram:client_final_message(server_message)
+                    if not message then
+                        return false, err
+                    end
+                    send_msg = encode_sasl_response(message)
+                elseif step == 'AuthenticationSASLFinal' then
+                    -- recv AuthenticationSASLFinal message
+                    recv_msg_type = step
+                elseif step == 'VerifyServerSignature' then
+                    local ok, err =
+                        scram:verify_server_signature(server_message)
+                    if not ok then
+                        return false, errorf('invalid server signature', err)
+                    end
+                elseif step == 'AuthenticationOk' then
+                    -- recv AuthenticationOk message
+                    recv_msg_type = step
+                end
+
+                if send_msg then
+                    local ok, err, timeout = self:send(send_msg)
+                    if not ok then
+                        return false, err, timeout
+                    end
+                end
+
+                if recv_msg_type then
+                    local res, err, timeout = self:recv()
+                    if not res then
+                        return false, err, timeout
+                    elseif res.type == 'ErrorResponse' then
+                        self.error_response = res
+                        return false,
+                               errorf('[%s] %s', res.severity, res.message)
+                    elseif res.type ~= recv_msg_type then
+                        return false, errorf(
+                                   recv_msg_type ..
+                                       '|ErrorResponse expected, got %q',
+                                   res.type)
+                    end
+                    server_message = res.data
+                end
+            end
+            return true
+        end
+    end
+
+    return false,
+           errorf('unsupported SASL mechanism: %q', concat(msg.names, ', '))
+end
+
 --- password_message sends a postgres.message.password_message message
 --- @private
 --- @param pswd string
@@ -220,7 +321,7 @@ end
 --- @return boolean? timeout
 function Connection:password_message(pswd)
     assert(type(pswd) == 'string', 'pswd must be string')
-    local ok, err, timeout = self:send(encode_message.password_message(pswd))
+    local ok, err, timeout = self:send(encode_password_message(pswd))
     if not ok then
         return nil, err, timeout
     end
@@ -293,10 +394,6 @@ function Connection:recv()
             elseif msg.type == 'NoticeResponse' then
                 self.noticefn(msg)
             else
-                -- print(dump {
-                --     msg = msg,
-                --     buf = self.buf,
-                -- })
                 if msg.type == 'ReadyForQuery' then
                     self.ready_for_query = msg
                 end
@@ -322,7 +419,7 @@ function Connection:close(force)
 
     local ok, err, timeout
     if not force then
-        ok, err, timeout = self:send(encode_message.terminate())
+        ok, err, timeout = self:send(encode_terminate())
     end
 
     self.sock:close()
@@ -347,7 +444,7 @@ function Connection:get_conninfo()
 end
 
 --- get_cancel
---- @return postgres.cancel cancel
+--- @return postgres.canceler cancel
 --- @return any err
 function Connection:get_cancel()
     return new_canceler(self.conninfo, self.backend_key_data.pid,
@@ -423,7 +520,7 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:flush()
-    local ok, err, timeout = self:send(encode_message.flush())
+    local ok, err, timeout = self:send(encode_flush())
     if not ok then
         return false, err, timeout
     end
@@ -586,7 +683,7 @@ function Connection:simple_query(query)
     --  * ErrorResponse
     --  * NoticeResponse
     --  * ReadyForQuery
-    local ok, err, timeout = self:send(encode_message.query(query))
+    local ok, err, timeout = self:send(encode_query(query))
     if not ok then
         return nil, err, timeout
     end
@@ -607,20 +704,20 @@ function Connection:extended_query(query, values, max_rows)
         -- the possible responses are:
         --  * ParseComplete
         --  * ErrorResponse
-        encode_message.parse('', query), -- unnamed statement
+        encode_parse('', query), -- unnamed statement
 
         -- bind parameters to the prepared query
         -- the possible responses are:
         --  * BindComplete
         --  * ErrorResponse
-        encode_message.bind('', '', values), -- unnamed portal and statement
+        encode_bind('', '', values), -- unnamed portal and statement
 
         -- describe portal
         -- the possible responses are:
         --  * RowDescription
         --  * NoData
         --  * ErrorResponse
-        encode_message.describe('portal', ''), -- unnamed portal
+        encode_describe('portal', ''), -- unnamed portal
 
         -- execute portal
         -- the possible responses are:
@@ -631,19 +728,19 @@ function Connection:extended_query(query, values, max_rows)
         --  * EmptyQueryResponse
         --  * ErrorResponse
         --  * NoticeResponse
-        encode_message.execute(''), -- unnamed portal
+        encode_execute(''), -- unnamed portal
 
         -- close statement
         -- the possible responses are:
         --  * CloseComplete
         --  * ErrorResponse
-        encode_message.close('statement', ''), -- unnamed statement
+        encode_close('statement', ''), -- unnamed statement
 
         -- sync
         -- the possible responses are:
         --  * ReadyForQuery
         --  * ErrorResponse
-        encode_message.sync(),
+        encode_sync(),
     }))
     if not ok then
         return nil, err, timeout

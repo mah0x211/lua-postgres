@@ -11,11 +11,14 @@ description = {
 }
 dependencies = {
     "lua >= 5.1",
+    "base64mix >= 1.0.1",
     "error >= 0.12.0",
+    "hmac >= 0.3.0",
     "metamodule >= 0.5.0",
     "net >= 0.37.0",
     "print >= 0.5.0",
     "postgres-decode >= 0.2.0",
+    "string-random >= 0.1.0",
     "time-clock >= 0.4.0",
     "unpack >= 0.1.0",
     "url >= 2.1.0",
