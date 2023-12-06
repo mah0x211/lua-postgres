@@ -47,6 +47,8 @@ local encode_close = encode_message.close
 local encode_sync = encode_message.sync
 local decode_message = require('postgres.message').decode
 local new_scram = require('postgres.scram').new
+local md5pswd = require('postgres.md5pswd')
+
 --- constants
 local INF_POS = math.huge
 local INF_NEG = -math.huge
@@ -195,6 +197,8 @@ function Connection:startup()
             -- authentication required
             if msg.type == 'AuthenticationCleartextPassword' then
                 return self:authentication_cleartext_password()
+            elseif msg.type == 'AuthenticationMD5Password' then
+                return self:authentication_md5_password(msg.salt)
             elseif msg.type == 'AuthenticationSASL' then
                 return self:authentication_sasl(msg.mechanisms)
             end
@@ -218,6 +222,32 @@ function Connection:authentication_cleartext_password()
     --  * ErrorResponse
     local msg, err, timeout = self:password_message(self.uri.password)
 
+    if not msg then
+        return false, err, timeout
+    elseif msg.type == 'ErrorResponse' then
+        self.error_response = msg
+        return false, errorf('[%s] %s', msg.severity, msg.message)
+    elseif msg.type ~= 'AuthenticationOk' then
+        return false, errorf('AuthenticationOk|ErrorResponse expected, got %q',
+                             msg.type)
+    end
+
+    return true
+end
+
+--- authentication_md_password sends a md5 password message
+--- @private
+--- @param salt string
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:authentication_md5_password(salt)
+    -- password message
+    -- the possible responses are;
+    --  * AuthenticationOk
+    --  * ErrorResponse
+    local password = md5pswd(self.uri.password, self.uri.user, salt)
+    local msg, err, timeout = self:password_message('md5' .. password)
     if not msg then
         return false, err, timeout
     elseif msg.type == 'ErrorResponse' then
