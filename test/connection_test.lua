@@ -108,12 +108,12 @@ function testcase.query()
     assert.match(rows.complete, '^postgres%.message%.command_complete: ', false)
 end
 
-function testcase.empty_query()
+function testcase.ping()
     local c = assert(new_connection())
 
-    -- test that empty query
-    local msg, err, timeout = c:query('')
-    assert.match(msg, '^postgres%.message%.empty_query_response: ', false)
+    -- test that ping
+    local ok, err, timeout = c:ping()
+    assert.is_true(ok)
     assert.is_nil(err)
     assert.is_nil(timeout)
 end

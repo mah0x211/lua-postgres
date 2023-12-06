@@ -660,6 +660,29 @@ function Connection:replace_named_params(query, params)
     return res, nil, newparams
 end
 
+--- ping sends a empty query message
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:ping()
+    local msg, err, timeout = self:simple_query('')
+    if not msg then
+        return false, err, timeout
+    elseif msg.type ~= 'EmptyQueryResponse' then
+        return false, errorf('EmptyQueryResponse expected, got %q', msg.type)
+    end
+
+    -- check that the connection is ready for query
+    msg, err, timeout = self:next()
+    if not msg then
+        return false, err, timeout
+    elseif msg.type ~= 'ReadyForQuery' then
+        return false, errorf('ReadyForQuery expected, got %q', msg.type)
+    end
+
+    return true
+end
+
 --- query
 --- @param query string
 --- @param params table<string, any>?
