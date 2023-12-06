@@ -684,6 +684,22 @@ function Connection:ping()
     return true
 end
 
+--- wait_ready keep receiving messages until a ReadyForQuery message is received
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Connection:wait_ready()
+    while not self.ready_for_query do
+        local msg, err, timeout = self:next()
+        if not msg then
+            return false, err, timeout
+        elseif msg.type == 'ErrorResponse' then
+            self.error_response = msg
+        end
+    end
+    return true
+end
+
 --- query
 --- @param query string
 --- @param params table<string, any>?
