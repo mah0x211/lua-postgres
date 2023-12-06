@@ -127,7 +127,6 @@ function Connection:init(conninfo)
         local msg
         msg, err, timeout = self:recv()
         if not msg then
-            self:close(true)
             return nil, err, timeout
         elseif msg.type == 'ErrorResponse' then
             self:close(true)
@@ -403,6 +402,8 @@ function Connection:recv()
             local s, timeout
             s, err, timeout = self.sock:recv()
             if not s then
+                -- close the connection even if it timed out
+                self:close(true)
                 return nil, err, timeout
             end
             self.buf = self.buf .. s
