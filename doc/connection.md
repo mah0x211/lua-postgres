@@ -171,7 +171,7 @@ see [55.2.3. Extended Query](https://www.postgresql.org/docs/current/protocol-fl
 
 - `ok:boolean`: `true` if the flush message was sent successfully.
 - `err:any`: the error object.
-- `timeout:boolean`: `true` if the operation would block.
+- `timeout:boolean`: `true` if the operation timed out.
 
 
 ## qry, err, params = connection:replace_named_params( qry, params )
@@ -230,6 +230,17 @@ print(dump(params))
 ```
 
 
+## ok, err, timeout = connection:ping()
+
+send the empty query message to the server for testing the connection.
+
+**Returns**
+
+- `ok:boolean`: `true` if the empty query message was sent successfully.
+- `err:any`: the error object.
+- `timeout:boolean`: `true` if the operation timed out.
+
+
 ## msg, err, timeout = connection:query( qry [, params [, max_rows]] )
 
 executes an SQL query and returns the result.  
@@ -245,7 +256,7 @@ before executing the query, the named parameters in the query are replaced with 
 
 - `msg:postgres.message?`: the message object.
 - `err:any`: the error object.
-- `timeout:boolean`: `true` if the operation would block.
+- `timeout:boolean`: `true` if the operation timed out.
 
 
 ## msg, err, timeout = connection:next()
@@ -264,5 +275,5 @@ this method will return the `postgres.message` object except the following messa
 
 - `msg:postgres.message`: the message object.
 - `err:any`: the error object.
-- `timeout:boolean`: `true` if the operation would block.
+- `timeout:boolean`: `true` if the operation timed out.
 
