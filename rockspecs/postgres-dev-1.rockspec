@@ -12,6 +12,7 @@ description = {
 dependencies = {
     "lua >= 5.1",
     "base64mix >= 1.0.1",
+    "denque >= 0.5.1",
     "error >= 0.12.0",
     "hmac >= 0.3.0",
     "metamodule >= 0.5.0",

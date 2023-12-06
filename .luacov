@@ -39,6 +39,7 @@ modules = {
     ["postgres.message.sync"] = "lib/message/sync.lua",
     ["postgres.message.terminate"] = "lib/message/terminate.lua",
     ["postgres.pool"] = "lib/pool.lua",
+    ["postgres.pool.queue"] = "lib/pool/queue.lua",
     ["postgres.rows"] = "lib/rows.lua",
     ["postgres.scram"] = "lib/scram.lua",
 }
