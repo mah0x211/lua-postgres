@@ -124,7 +124,7 @@ while rows:next() do
     end
 end
 -- close the result
-res:close()
+rows:close()
 
 -- above code outputs the following:
 -- {
@@ -231,13 +231,13 @@ while rows:next() do
 end
 
 -- close the result
-res:close()
+rows:close()
 
 -- above code outputs the following:
 -- {
 --     field = {
 --         col = 1,
---         format = 0,
+--         format = "text",
 --         mod = -1,
 --         name = "int4",
 --         size = 4,
@@ -250,7 +250,7 @@ res:close()
 -- {
 --     field = {
 --         col = 2,
---         format = 0,
+--         format = "text",
 --         mod = -1,
 --         name = "?column?",
 --         size = -1,
@@ -263,7 +263,7 @@ res:close()
 -- {
 --     field = {
 --         col = 3,
---         format = 0,
+--         format = "text",
 --         mod = -1,
 --         name = "timestamp",
 --         size = 8,
