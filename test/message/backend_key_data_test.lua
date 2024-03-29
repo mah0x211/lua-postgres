@@ -51,10 +51,10 @@ function testcase.encode_decode()
 
     -- test that throw error if pid is not integer
     local err = assert.throws(encode, 1.23)
-    assert.match(err, 'integer expected, got number')
+    assert.match(err, 'int32_t expected,')
 
     -- test that throw error if key is not integer
     err = assert.throws(encode, 123, 4.56)
-    assert.match(err, 'integer expected, got number')
+    assert.match(err, 'int32_t expected,')
 end
 

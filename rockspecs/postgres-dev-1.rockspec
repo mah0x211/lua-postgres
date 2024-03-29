@@ -15,6 +15,7 @@ dependencies = {
     "denque >= 0.5.1",
     "error >= 0.12.0",
     "hmac >= 0.3.0",
+    "lauxhlib >= 0.6.0",
     "metamodule >= 0.5.0",
     "net >= 0.37.0",
     "print >= 0.5.0",

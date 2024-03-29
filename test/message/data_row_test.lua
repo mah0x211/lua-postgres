@@ -27,10 +27,10 @@ function testcase.decode()
         consumed = #s,
         type = 'DataRow',
         values = {
-            'foo',
-            '',
-            '\0',
-            'world',
+            [1] = 'foo',
+            [2] = '',
+            [3] = nil,
+            [4] = 'world',
         },
     })
 

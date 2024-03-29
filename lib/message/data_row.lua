@@ -24,8 +24,6 @@ local sub = string.sub
 local rep = string.rep
 local errorf = require('error').format
 local unpack = require('postgres.unpack')
---- constants
-local NULL = '\0'
 
 --
 -- DataRow (B)
@@ -135,11 +133,9 @@ local function decode(s)
                        errorf(
                            'invalid DataRow message: column value#%d length %d is not supported',
                            i, v[i])
-            elseif v[i] == -1 then
-                values[k] = NULL
             elseif v[i] == 0 then
                 values[k] = ''
-            else
+            elseif v[i] ~= -1 then
                 values[k] = v[i + 1]
             end
             k = k + 1
