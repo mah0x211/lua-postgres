@@ -10,7 +10,7 @@ function testcase.close()
     ]]))
 
     -- test that return postgres.rows object
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert.match(rows, '^postgres%.rows: ', false)
 
     -- test that close associated result
@@ -26,7 +26,7 @@ function testcase.next()
     local res = assert(c:query([[
         SELECT 1, 10
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
 
     -- test that return true if the first row exists
     assert.is_true(rows:next())
@@ -39,7 +39,7 @@ function testcase.readat()
     local res = assert(c:query([[
         SELECT 123 AS a, 456 AS b
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
 
     -- test that read specified column value
@@ -69,7 +69,7 @@ function testcase.read()
     local res = assert(c:query([[
         SELECT 123 AS a, 456 AS b
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
 
     -- test that read each column value
@@ -99,7 +99,7 @@ function testcase.scanat()
     local res = assert(c:query([[
         SELECT 123::integer AS a, '1999-05-12'::date AS b
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
 
     -- test that scan specified column value and return the decoded value
@@ -135,7 +135,7 @@ function testcase.scan()
     local res = assert(c:query([[
         SELECT 123::integer AS a, '1999-05-12'::date AS b
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
 
     -- test that scan each column value and return the decoded value
