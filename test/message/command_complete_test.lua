@@ -16,7 +16,7 @@ function testcase.decode()
         consumed = #s,
         type = 'CommandComplete',
         tag = 'SELECT',
-        rows = nil,
+        nrow = nil,
     })
     assert.is_nil(err)
     assert.is_nil(again)

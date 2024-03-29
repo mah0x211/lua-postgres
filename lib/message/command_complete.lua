@@ -28,7 +28,7 @@ local unpack = require('postgres.unpack')
 
 --- @class postgres.message.command_complete : postgres.message
 --- @field tag string
---- @field rows integer
+--- @field nrow integer
 local CommandComplete = require('metamodule').new({}, 'postgres.message')
 
 local HAS_ROWS = {
@@ -110,19 +110,19 @@ local function decode(s)
         words[#words + 1] = word
     end
 
-    local rows
+    local nrow
     if not words[1] then
         return nil, errorf('invalid CommandComplete message: empty tag')
     elseif HAS_ROWS[words[1]] then
         tag = words[1]
-        rows = tonumber(tag == 'INSERT' and words[3] or words[2])
+        nrow = tonumber(tag == 'INSERT' and words[3] or words[2])
     end
 
     local msg = CommandComplete()
     msg.consumed = consumed
     msg.type = 'CommandComplete'
     msg.tag = tag
-    msg.rows = rows
+    msg.nrow = nrow
     return msg
 end
 
