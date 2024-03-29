@@ -90,7 +90,7 @@ function testcase.query()
     assert.is_nil(err)
     assert.is_nil(timeout)
 
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     local cols = {}
     assert(rows:next())
     for _ = 1, 5 do

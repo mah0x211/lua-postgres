@@ -43,9 +43,9 @@ local NULL = '\0'
 --- @field fields postgres.message.row_description.field[]
 local RowDescription = {}
 
---- rows
+--- get_rows
 --- @return postgres.rows? rows
-function RowDescription:rows()
+function RowDescription:get_rows()
     return new_rows(self.conn, self.fields)
 end
 

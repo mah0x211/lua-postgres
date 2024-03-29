@@ -39,7 +39,7 @@ function testcase.decode_boolean_array()
     local res = assert(c:query([[
         SELECT ARRAY[true, false, true] AS boolean_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -58,7 +58,7 @@ function testcase.decode_int_array()
     local res = assert(c:query([[
         SELECT ARRAY[1,2,3] AS int_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -77,7 +77,7 @@ function testcase.decode_int_mrange()
     local res = assert(c:query([[
         SELECT '{[1,3),[5,7)}'::int4multirange AS int_mrange;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -103,7 +103,7 @@ function testcase.decode_int_range_array()
     local res = assert(c:query([[
         SELECT ARRAY['[1,3)'::int4range] AS int_range_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -124,7 +124,7 @@ function testcase.decode_int_mrange_array()
     local res = assert(c:query([[
         SELECT ARRAY['{[1,3),[5,7)}'::int4multirange] AS int_mrange_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -152,7 +152,7 @@ function testcase.decode_float_array()
     local res = assert(c:query([[
         SELECT ARRAY[1.2,2.3,3.4] AS float_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -171,7 +171,7 @@ function testcase.decode_float_range()
     local res = assert(c:query([[
         SELECT '[1.2,3.4)'::numrange AS float_range;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -190,7 +190,7 @@ function testcase.decode_float_mrange()
     local res = assert(c:query([[
         SELECT '{[1.2,3.4),[5.6,7.8)}'::nummultirange AS float_mrange;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -218,7 +218,7 @@ function testcase.decode_float_range_array()
             '[1.2,3.4)'::numrange
         ] AS float_range_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -241,7 +241,7 @@ function testcase.decode_float_mrange_array()
             '{[1.2,3.4),[5.6,7.8)}'::nummultirange
         ] AS float_mrange_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -269,7 +269,7 @@ function testcase.decode_date_array()
     local res = assert(c:query([[
         SELECT ARRAY[CURRENT_DATE, CURRENT_DATE, CURRENT_DATE] AS date_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -289,7 +289,7 @@ function testcase.decode_date_range()
     local res = assert(c:query([[
         SELECT '[1999-05-12, 1999-12-25)'::daterange AS date_range;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -319,7 +319,7 @@ function testcase.decode_date_mrange()
             '[1999-12-01, 1999-12-31)'::daterange
         ) AS date_multirange;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -361,7 +361,7 @@ function testcase.decode_date_range_array()
     local res = assert(c:query([[
         SELECT ARRAY['[1999-05-12, 1999-12-25)'::daterange] AS date_range_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -393,7 +393,7 @@ function testcase.decode_date_mrange_array()
             '[1999-12-01, 1999-12-31)'::daterange
         )] AS date_multirange_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -441,7 +441,7 @@ function testcase.decode_time_array()
             '11:59:12'::time
         ] AS time_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -479,7 +479,7 @@ function testcase.decode_timestamp_array()
             '1999-12-1 13:59:59.123456+00'::timestamptz
         ] AS timestamp_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -534,7 +534,7 @@ function testcase.decode_tsrange()
     local res = assert(c:query([[
         SELECT '[1999-12-1 13:59:59.123456+00, 1999-12-1 20:00:00.123456+00)'::tsrange
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -569,7 +569,7 @@ function testcase.decode_tsmrange()
     local res = assert(c:query([[
         SELECT '{[1999-12-1 13:59:59.123456+00, 1999-12-1 20:00:00.123456+00)}'::tsmultirange
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -608,7 +608,7 @@ function testcase.decode_tsrange_array()
             '[1999-12-1 13:59:59.123456+00, 1999-12-1 20:00:00.123456+00)'::tsrange
         ] AS tsrange_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -647,7 +647,7 @@ function testcase.decode_tsmrange_array()
             '{[1999-12-1 13:59:59.123456+00, 1999-12-1 20:00:00.123456+00)}'::tsmultirange
         ] AS tsmrange_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -689,7 +689,7 @@ function testcase.decode_bytea_array()
             '\x5678'::bytea
         ] AS bytea_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -710,7 +710,7 @@ function testcase.decode_bit_array()
             B'10010101'
         ] AS bit_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -735,7 +735,7 @@ function testcase.decode_tsvector_array()
             'a and ate cat fat mat on rat sat'::tsvector
         ] AS tsvector_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -783,7 +783,7 @@ function testcase.decode_point_array()
             '(3.5, 4.5)'::point
         ] AS point_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -810,7 +810,7 @@ function testcase.decode_line_array()
             '{3.5, 4, 4.5}'::line
         ] AS line_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -839,7 +839,7 @@ function testcase.decode_lseg_array()
             '[(5.5, 6.5), (7.5, 8.5)]'::lseg
         ] AS lseg_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -878,7 +878,7 @@ function testcase.decode_box_array()
             '(7.5, 8.5), (5.5, 6.5)'::box
         ] AS box_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -917,7 +917,7 @@ function testcase.decode_path_array()
             '((5.5, 6.5), (7.5, 8.5))'::path
         ] AS path_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -956,7 +956,7 @@ function testcase.decode_polygon_array()
             '((7.5, 8.5), (9.5, 10.5), (11.5, 12.5))'::polygon
         ] AS polygon_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -1003,7 +1003,7 @@ function testcase.decode_circle_array()
             '<(4.5, 5.5), 6.5>'::circle
         ] AS circle_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -1032,7 +1032,7 @@ function testcase.decode_text_array()
             'baz_qux'::text
         ] AS text_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))
@@ -1054,7 +1054,7 @@ function testcase.decode_json_array()
             '{"e": 5, "f": 6}'::json
         ] AS json_array;
     ]]))
-    local rows = assert(res:rows())
+    local rows = assert(res:get_rows())
     assert(rows:next())
     local field, val = assert(rows:read())
     local v = assert(decoder:decode_by_oid(field.type_oid, val))

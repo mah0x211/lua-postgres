@@ -110,7 +110,7 @@ local conn = assert(connection.new())
 local msg = assert(conn:query([[
     SELECT 1::integer, 'foo', '1999-05-12 12:14:01.1234'::timestamp
 ]]))
-local rows = assert(msg:rows())
+local rows = assert(msg:get_rows())
 while rows:next() do
     -- read the columns of the current row and update the current position
     local field, value = rows:read()
@@ -213,7 +213,7 @@ local conn = assert(connection.new())
 local res = assert(conn:query([[
     SELECT 1::integer, 'foo', '1999-05-12 12:14:01.1234'::timestamp
 ]]))
-local rows = assert(res:rows())
+local rows = assert(res:get_rows())
 while rows:next() do
     -- read the columns of the current row and update the current position
     local field, value, err = rows:scan()

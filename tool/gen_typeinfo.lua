@@ -88,7 +88,7 @@ do
     end
 end
 
-local rows = assert(res:rows())
+local rows = assert(res:get_rows())
 local comment_fmt = '-- %' .. maxwidth .. 's: %s'
 local typelist = {}
 local array2base = {}
