@@ -30,6 +30,14 @@ local setmetatable = setmetatable
 --- @field type string
 local Message = {}
 
+--- close
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function Message:close()
+    return self.conn:wait_ready()
+end
+
 require('metamodule').new(Message)
 
 local DECODER = {
