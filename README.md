@@ -50,7 +50,7 @@ end
 
 if rows.complete then
     print('----------------------------')
-    print(('%s %d rows\n'):format(rows.complete.tag, rows.complete.rows))
+    print(('%s %d rows\n'):format(rows.complete.tag, rows.complete.nrow))
 end
 
 rows:close()
