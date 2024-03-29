@@ -38,6 +38,12 @@ function Message:close()
     return self.conn:wait_ready()
 end
 
+--- get_rows
+--- @return postgres.rows? rows
+function Message:get_rows()
+    return nil
+end
+
 require('metamodule').new(Message)
 
 local DECODER = {

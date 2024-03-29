@@ -34,7 +34,7 @@ end
 
 -- read the result rows
 local nrec = 0
-local rows = assert(msg:rows())
+local rows = assert(msg:get_rows())
 -- retrieve the DataRow message  
 while rows:next() do
     nrec = nrec + 1
