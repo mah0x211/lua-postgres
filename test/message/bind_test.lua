@@ -42,10 +42,10 @@ function testcase.decode()
             'text',
         },
         values = {
-            'hello',
-            '',
-            '\0',
-            'world',
+            [1] = 'hello',
+            [2] = '',
+            [3] = nil,
+            [4] = 'world',
         },
         results = {
             'text',
