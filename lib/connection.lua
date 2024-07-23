@@ -711,7 +711,10 @@ function Connection:query(query, params, max_rows)
            'params must be table or nil')
     assert(max_rows == nil or is_finite(max_rows),
            'max_rows must be integer or nil')
-    if not self.ready_for_query then
+
+    if not self.sock then
+        return nil, errorf('connection is closed')
+    elseif not self.ready_for_query then
         return nil, errorf('connection is not ready for query')
     end
 
