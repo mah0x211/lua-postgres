@@ -402,8 +402,6 @@ function Connection:recv()
             local s, timeout
             s, err, timeout = self.sock:recv()
             if not s then
-                -- close the connection even if it timed out
-                self:close(true)
                 return nil, err, timeout
             end
             self.buf = self.buf .. s
