@@ -142,3 +142,32 @@ function testcase.next()
     assert.is_nil(timeout)
 end
 
+function testcase.set_recv_timeout()
+    local c = assert(new_connection())
+
+    -- test that set recv timeout
+    local ok, err = c:set_recv_timeout(5)
+    assert.is_true(ok)
+    assert.is_nil(err)
+
+    -- test that set recv timeout with zero value
+    ok, err = c:set_recv_timeout(0)
+    assert.is_true(ok)
+    assert.is_nil(err)
+
+    -- test that set recv timeout with float value
+    ok, err = c:set_recv_timeout(1.5)
+    assert.is_true(ok)
+    assert.is_nil(err)
+
+    -- test that recv timeout works
+    local res, timeout
+    res, err, timeout = c:query('SELECT pg_sleep(2)')
+    assert.is_nil(res)
+    assert.is_nil(err)
+    assert.is_true(timeout)
+
+    -- after timeout, the connection should be closed manually
+    assert(c:close())
+end
+
