@@ -1,9 +1,7 @@
 std = "max"
 include_files = {
-    "lib/*.lua",
-    "lib/*/*.lua",
-    "test/*_test.lua",
-    "test/*/*_test.lua",
+    "lib/**/*.lua",
+    "test/**/*_test.lua",
 }
 exclude_files = {
     "_*.lua",

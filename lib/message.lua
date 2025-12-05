@@ -65,6 +65,8 @@ local DECODER = {
     s = require('postgres.message.portal_suspended').decode,
     Z = require('postgres.message.ready_for_query').decode,
     T = require('postgres.message.row_description').decode,
+    -- Copy protocol messages
+    d = require('postgres.message.copy_data').decode,
 }
 
 --- decode_message
@@ -104,6 +106,8 @@ return {
         startup_message = require('postgres.message.startup_message').encode,
         sync = require('postgres.message.sync').encode,
         terminate = require('postgres.message.terminate').encode,
+        -- Copy protocol messages
+        copy_data = require('postgres.message.copy_data').encode,
     },
     decode = setmetatable({
         authentication = require('postgres.message.authentication').decode,
@@ -128,6 +132,8 @@ return {
         portal_suspended = require('postgres.message.portal_suspended').decode,
         ready_for_query = require('postgres.message.ready_for_query').decode,
         row_description = require('postgres.message.row_description').decode,
+        -- Copy protocol messages
+        copy_data = require('postgres.message.copy_data').decode,
     }, {
         __call = function(_, ...)
             return decode(...)
