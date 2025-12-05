@@ -171,3 +171,24 @@ function testcase.set_recv_timeout()
     assert(c:close())
 end
 
+function testcase.set_send_timeout()
+    local c = assert(new_connection())
+
+    -- test that set send timeout
+    local ok, err = c:set_send_timeout(5)
+    assert.is_true(ok)
+    assert.is_nil(err)
+
+    -- test that set send timeout with zero value
+    ok, err = c:set_send_timeout(0)
+    assert.is_true(ok)
+    assert.is_nil(err)
+
+    -- test that set send timeout with float value
+    ok, err = c:set_send_timeout(1.5)
+    assert.is_true(ok)
+    assert.is_nil(err)
+
+    -- NOTE: It is difficult to test that send timeout works.
+end
+

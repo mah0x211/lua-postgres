@@ -159,6 +159,21 @@ function Connection:set_recv_timeout(sec)
     return err == nil, err
 end
 
+--- set_send_timeout
+--- @param sec number
+--- @return boolean ok
+--- @return any err
+function Connection:set_send_timeout(sec)
+    assert(type(sec) == 'number' and sec >= 0, 'sec must be a unsigned number')
+
+    if not self.sock then
+        return false, errorf('connection is closed')
+    end
+
+    local _, err = self.sock:sndtimeo(sec)
+    return err == nil, err
+end
+
 --- startup
 --- @private
 --- @return boolean ok
