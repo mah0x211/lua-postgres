@@ -66,6 +66,7 @@ local DECODER = {
     Z = require('postgres.message.ready_for_query').decode,
     T = require('postgres.message.row_description').decode,
     -- Copy protocol messages
+    W = require('postgres.message.copy_both_response').decode,
     d = require('postgres.message.copy_data').decode,
     c = require('postgres.message.copy_done').decode,
     f = require('postgres.message.copy_fail').decode,
@@ -137,6 +138,7 @@ return {
         ready_for_query = require('postgres.message.ready_for_query').decode,
         row_description = require('postgres.message.row_description').decode,
         -- Copy protocol messages
+        copy_both_response = require('postgres.message.copy_both_response').decode,
         copy_data = require('postgres.message.copy_data').decode,
         copy_done = require('postgres.message.copy_done').decode,
         copy_fail = require('postgres.message.copy_fail').decode,

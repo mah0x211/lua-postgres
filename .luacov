@@ -15,6 +15,7 @@ modules = {
     ["postgres.message.close_complete"] = "lib/message/close_complete.lua",
     ["postgres.message.close"] = "lib/message/close.lua",
     ["postgres.message.command_complete"] = "lib/message/command_complete.lua",
+    ["postgres.message.copy_both_response"] = "lib/message/copy_both_response.lua",
     ["postgres.message.copy_data"] = "lib/message/copy_data.lua",
     ["postgres.message.copy_done"] = "lib/message/copy_done.lua",
     ["postgres.message.copy_fail"] = "lib/message/copy_fail.lua",
