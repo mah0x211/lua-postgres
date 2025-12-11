@@ -68,6 +68,7 @@ local DECODER = {
     -- Copy protocol messages
     d = require('postgres.message.copy_data').decode,
     c = require('postgres.message.copy_done').decode,
+    f = require('postgres.message.copy_fail').decode,
 }
 
 --- decode_message
@@ -110,6 +111,7 @@ return {
         -- Copy protocol messages
         copy_data = require('postgres.message.copy_data').encode,
         copy_done = require('postgres.message.copy_done').encode,
+        copy_fail = require('postgres.message.copy_fail').encode,
     },
     decode = setmetatable({
         authentication = require('postgres.message.authentication').decode,
@@ -137,6 +139,7 @@ return {
         -- Copy protocol messages
         copy_data = require('postgres.message.copy_data').decode,
         copy_done = require('postgres.message.copy_done').decode,
+        copy_fail = require('postgres.message.copy_fail').decode,
     }, {
         __call = function(_, ...)
             return decode(...)
