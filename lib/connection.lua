@@ -395,7 +395,7 @@ end
 --- @return boolean? timeout
 function Connection:send(s)
     if not self.sock then
-        return nil, errorf('connection is closed')
+        return false, errorf('connection is closed')
     end
 
     local len, err, timeout = self.sock:send(s)
@@ -481,6 +481,7 @@ function Connection:close(force)
         ok, err, timeout = self:send(encode_terminate())
     end
 
+    -- close socket even if sending terminate message failed
     self.sock:close()
     self.sock = nil
     if not force and not ok then
@@ -717,15 +718,17 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:wait_ready()
-    while not self.ready_for_query do
-        local msg, err, timeout = self:next()
-        if not msg then
-            return false, err, timeout
-        elseif msg.type == 'ErrorResponse' then
-            self.error_response = msg
-        end
+    if self.ready_for_query then
+        return true
     end
-    return true
+
+    local msg, err, timeout = self:recv()
+    if not msg then
+        return false, err, timeout
+    elseif msg.type == 'ReadyForQuery' then
+        return true
+    end
+    return false, errorf('wait for ReadyForQuery message but got %q', msg.type)
 end
 
 --- query
@@ -744,8 +747,6 @@ function Connection:query(query, params, max_rows)
 
     if not self.sock then
         return nil, errorf('connection is closed')
-    elseif not self.ready_for_query then
-        return nil, errorf('connection is not ready for query')
     end
 
     if params == nil then
@@ -774,6 +775,14 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:simple_query(query)
+    local ok, err, timeout = self:wait_ready()
+    if not ok then
+        if err then
+            err = errorf('connection is not ready', err)
+        end
+        return nil, err, timeout
+    end
+
     -- The possible response messages from the backend are:
     --  * CommandComplete
     --  * CopyInResponse
@@ -784,7 +793,7 @@ function Connection:simple_query(query)
     --  * ErrorResponse
     --  * NoticeResponse
     --  * ReadyForQuery
-    local ok, err, timeout = self:send(encode_query(query))
+    ok, err, timeout = self:send(encode_query(query))
     if not ok then
         return nil, err, timeout
     end
@@ -800,7 +809,15 @@ end
 --- @return any err
 --- @return boolean? timeout
 function Connection:extended_query(query, values, max_rows)
-    local ok, err, timeout = self:send(concat({
+    local ok, err, timeout = self:wait_ready()
+    if not ok then
+        if err then
+            err = errorf('connection is not ready', err)
+        end
+        return nil, err, timeout
+    end
+
+    ok, err, timeout = self:send(concat({
         -- prepare query
         -- the possible responses are:
         --  * ParseComplete

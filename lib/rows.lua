@@ -56,14 +56,14 @@ end
 function Rows:close()
     local conn = self.conn
     if not conn then
-        return true
+        return self.complete ~= nil, self.error, self.is_timeout
     end
 
     -- remove connection and row
     self.conn = nil
     self.row = nil
     -- retrieve CommandComplete message
-    while not self.complete do
+    while true do
         -- the allowed message types are;
         --  * DataRow
         --  * CommandComplete
@@ -79,17 +79,20 @@ function Rows:close()
 
         if res.type == 'CommandComplete' then
             self.complete = res
+            return true
         elseif res.type == 'ErrorResponse' then
             self.error = errorf('[%s] %s', res.severity, res.message)
+            return false, self.error
         elseif res.type ~= 'DataRow' then
             self.error = errorf(
                              'DataRow|CommandComplete|ErrorResponse expected, got %q',
                              res.type)
+            -- close connection on unexpected message type
+            conn:close()
+            return false, self.error
         end
+        -- discard DataRow messages
     end
-
-    -- retrieve ReadyForQuery message
-    return conn:wait_ready()
 end
 
 --- next retrives the DataRow message
@@ -98,8 +101,8 @@ end
 --- @return boolean? timeout
 function Rows:next()
     local conn = self.conn
-    if not conn or self.complete or self.error then
-        return false
+    if not conn then
+        return false, self.error
     end
 
     -- remove current row
@@ -124,18 +127,23 @@ function Rows:next()
         self.row = res
         self.coli = 1
         return true
-    elseif res.type == 'CommandComplete' then
+    end
+
+    -- complete, error or unexpected message type
+    if res.type == 'CommandComplete' then
         self.complete = res
-        return false
     elseif res.type == 'ErrorResponse' then
         self.error = errorf('[%s] %s', res.severity, res.message)
-        return false, self.error
     else
         self.error = errorf(
                          'DataRow|CommandComplete|ErrorResponse expected, got %q',
                          res.type)
-        return false, self.error
+        -- close connection on unexpected message type
+        conn:close()
     end
+    -- remove connection to prevent further next/close
+    self.conn = nil
+    return false, self.error
 end
 
 --- readat read specified column value
