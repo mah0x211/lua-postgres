@@ -70,7 +70,7 @@ jobs:
     -
       name: Install
       run: |
-        luarocks make POSTGRES_COVERAGE=1
+        POSTGRES_COVERAGE=1 luarocks make
     -
       name: Run Test
       env:
