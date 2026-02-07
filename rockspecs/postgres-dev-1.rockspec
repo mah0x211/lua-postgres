@@ -1,3 +1,4 @@
+rockspec_format = "3.0"
 package = "postgres"
 version = "dev-1"
 source = {
@@ -26,19 +27,71 @@ dependencies = {
     "url >= 2.1.0",
     "yyjson >= 0.5.1",
 }
+build_dependencies = {
+    "luarocks-build-hooks",
+}
 build = {
-    type = 'make',
-    build_variables = {
-        LIB_EXTENSION = "$(LIB_EXTENSION)",
-        CFLAGS = "$(CFLAGS)",
-        WARNINGS = "-Wall -Wno-trigraphs -Wmissing-field-initializers -Wreturn-type -Wmissing-braces -Wparentheses -Wno-switch -Wunused-function -Wunused-label -Wunused-parameter -Wunused-variable -Wunused-value -Wuninitialized -Wunknown-pragmas -Wshadow -Wsign-compare",
-        CPPFLAGS = "-I$(LUA_INCDIR)",
-        LDFLAGS = "$(LIBFLAG)",
-        POSTGRES_COVERAGE = "$(POSTGRES_COVERAGE)",
+    type = 'hooks',
+    before_build = "$(extra-vars)",
+    -- Extra values to append to existing variables
+    extra_variables = {
+        CFLAGS = "-Wall -Wno-trigraphs -Wmissing-field-initializers -Wreturn-type -Wmissing-braces -Wparentheses -Wno-switch -Wunused-function -Wunused-label -Wunused-parameter -Wunused-variable -Wunused-value -Wuninitialized -Wunknown-pragmas -Wshadow -Wsign-compare",
     },
-    install_variables = {
-        LIB_EXTENSION = "$(LIB_EXTENSION)",
-        INST_LIBDIR = "$(LIBDIR)",
-        INST_LUADIR = "$(LUADIR)",
+    conditional_variables = {
+        POSTGRES_COVERAGE = {
+            CFLAGS = "--coverage",
+            LIBFLAG = "--coverage",
+        },
+    },
+    modules = {
+        ["postgres.canceler"] = "lib/canceler.lua",
+        ["postgres.connection"] = "lib/connection.lua",
+        ["postgres.conninfo"] = "lib/conninfo.lua",
+        ["postgres.decoder"] = "lib/decoder.lua",
+        ["postgres.message"] = "lib/message.lua",
+        ["postgres.message.authentication"] = "lib/message/authentication.lua",
+        ["postgres.message.backend_key_data"] = "lib/message/backend_key_data.lua",
+        ["postgres.message.bind_complete"] = "lib/message/bind_complete.lua",
+        ["postgres.message.bind"] = "lib/message/bind.lua",
+        ["postgres.message.cancel_request"] = "lib/message/cancel_request.lua",
+        ["postgres.message.close_complete"] = "lib/message/close_complete.lua",
+        ["postgres.message.close"] = "lib/message/close.lua",
+        ["postgres.message.command_complete"] = "lib/message/command_complete.lua",
+        ["postgres.message.data_row"] = "lib/message/data_row.lua",
+        ["postgres.message.describe"] = "lib/message/describe.lua",
+        ["postgres.message.empty_query_response"] = "lib/message/empty_query_response.lua",
+        ["postgres.message.error_response"] = "lib/message/error_response.lua",
+        ["postgres.message.execute"] = "lib/message/execute.lua",
+        ["postgres.message.flush"] = "lib/message/flush.lua",
+        ["postgres.message.negotiation_protocol_version"] = "lib/message/negotiation_protocol_version.lua",
+        ["postgres.message.no_data"] = "lib/message/no_data.lua",
+        ["postgres.message.notification_response"] = "lib/message/notification_response.lua",
+        ["postgres.message.parameter_description"] = "lib/message/parameter_description.lua",
+        ["postgres.message.parameter_status"] = "lib/message/parameter_status.lua",
+        ["postgres.message.parse_complete"] = "lib/message/parse_complete.lua",
+        ["postgres.message.parse"] = "lib/message/parse.lua",
+        ["postgres.message.password_message"] = "lib/message/password_message.lua",
+        ["postgres.message.portal_suspended"] = "lib/message/portal_suspended.lua",
+        ["postgres.message.query"] = "lib/message/query.lua",
+        ["postgres.message.ready_for_query"] = "lib/message/ready_for_query.lua",
+        ["postgres.message.row_description"] = "lib/message/row_description.lua",
+        ["postgres.message.sasl_initial_response"] = "lib/message/sasl_initial_response.lua",
+        ["postgres.message.sasl_response"] = "lib/message/sasl_response.lua",
+        ["postgres.message.startup_message"] = "lib/message/startup_message.lua",
+        ["postgres.message.sync"] = "lib/message/sync.lua",
+        ["postgres.message.terminate"] = "lib/message/terminate.lua",
+        ["postgres.pool"] = "lib/pool.lua",
+        ["postgres.pool.connection"] = "lib/pool/connection.lua",
+        ["postgres.pool.queue"] = "lib/pool/queue.lua",
+        ["postgres.rows"] = "lib/rows.lua",
+        ["postgres.scram"] = "lib/scram.lua",
+        -- C modules
+        ["postgres.htonl"] = "src/htonl.c",
+        ["postgres.htons"] = "src/htons.c",
+        ["postgres.md5pswd"] = "src/md5pswd.c",
+        ["postgres.ntohl"] = "src/ntohl.c",
+        ["postgres.ntohs"] = "src/ntohs.c",
+        ["postgres.strxor"] = "src/strxor.c",
+        ["postgres.unpack"] = "src/unpack.c",
     },
 }
