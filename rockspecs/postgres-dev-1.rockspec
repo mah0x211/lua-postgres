@@ -12,7 +12,7 @@ description = {
 }
 dependencies = {
     "lua >= 5.1",
-    "base64mix >= 1.0.1",
+    "base64mix >= 1.1.2",
     "denque >= 0.5.1",
     "error >= 0.12.0",
     "hmac >= 0.3.0",
@@ -28,7 +28,7 @@ dependencies = {
     "yyjson >= 0.5.1",
 }
 build_dependencies = {
-    "luarocks-build-hooks",
+    "luarocks-build-hooks >= 0.8.0",
 }
 build = {
     type = 'hooks',
@@ -86,12 +86,30 @@ build = {
         ["postgres.rows"] = "lib/rows.lua",
         ["postgres.scram"] = "lib/scram.lua",
         -- C modules
-        ["postgres.htonl"] = "src/htonl.c",
-        ["postgres.htons"] = "src/htons.c",
-        ["postgres.md5pswd"] = "src/md5pswd.c",
-        ["postgres.ntohl"] = "src/ntohl.c",
-        ["postgres.ntohs"] = "src/ntohs.c",
-        ["postgres.strxor"] = "src/strxor.c",
+        ["postgres.htonl"] = {
+            sources = { "src/htonl.c" },
+            incdirs = { "$(DEP_LAUXHLIB_INCDIR)" },
+        },
+        ["postgres.htons"] = {
+            sources = { "src/htons.c" },
+            incdirs = { "$(DEP_LAUXHLIB_INCDIR)" },
+        },
+        ["postgres.md5pswd"] = {
+            sources = { "src/md5pswd.c" },
+            incdirs = { "$(DEP_LAUXHLIB_INCDIR)" },
+        },
+        ["postgres.ntohl"] = {
+            sources = { "src/ntohl.c" },
+            incdirs = { "$(DEP_LAUXHLIB_INCDIR)" },
+        },
+        ["postgres.ntohs"] = {
+            sources = { "src/ntohs.c" },
+            incdirs = { "$(DEP_LAUXHLIB_INCDIR)" },
+        },
+        ["postgres.strxor"] = {
+            sources = { "src/strxor.c" },
+            incdirs = { "$(DEP_LAUXHLIB_INCDIR)" },
+        },
         ["postgres.unpack"] = "src/unpack.c",
     },
 }
