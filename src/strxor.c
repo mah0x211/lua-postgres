@@ -20,7 +20,10 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+// depend
 #include "lauxhlib.h"
+// lua
+#include <lauxlib.h>
 
 static int strxor_lua(lua_State *L)
 {

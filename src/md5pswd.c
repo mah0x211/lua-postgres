@@ -35,6 +35,7 @@
  * compile-time configuration.
  */
 
+// system
 #include <string.h>
 
 /* Any 32-bit or wider unsigned integer data type will do */
@@ -313,7 +314,10 @@ static void MD5_Final(unsigned char *result, MD5_CTX *ctx)
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+// depend
 #include "lauxhlib.h"
+// lua
+#include <lauxlib.h>
 
 static int md5pswd_lua(lua_State *L)
 {

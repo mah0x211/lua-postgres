@@ -20,9 +20,12 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
-#include <arpa/inet.h>
-// lua
+// depend
 #include "lauxhlib.h"
+// lua
+#include <lauxlib.h>
+// system
+#include <arpa/inet.h>
 
 static int htonl_lua(lua_State *L)
 {
