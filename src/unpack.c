@@ -20,12 +20,13 @@
  *  DEALINGS IN THE SOFTWARE.
  */
 
+// lua
+#include <lauxlib.h>
+// system
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <inttypes.h>
 #include <string.h>
-// lua
-#include "lauxlib.h"
 
 /**
  * Unpack data string with format string.
